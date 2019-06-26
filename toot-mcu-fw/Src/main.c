@@ -135,20 +135,22 @@ int main(void)
   MX_USB_PCD_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_Delay(100); // Delay 100 milliseconds for LEDs to power on
+  HAL_Delay(100); // Delay some milliseconds for LEDs to power on
 
   initWS2812B(&gLED_DRUM_STRING, &hspi1, GPIO_SPI_CS_MCU_LED_DRUM, 10);
   clearPixels(&gLED_DRUM_STRING);
   showPixels(&gLED_DRUM_STRING);
-  showPixels(&gLED_DRUM_STRING); // First SPI transaction has a glitch that sets first LED red, so do it again.
+  showPixels(&gLED_DRUM_STRING); // First SPI transaction has a glitch, so do it again.
 
   initWS2812B(&gLED_SEQ_STRING, &hspi1, GPIO_SPI_CS_MCU_LED_SEQ, 16);
   clearPixels(&gLED_SEQ_STRING);
   showPixels(&gLED_SEQ_STRING);
+  showPixels(&gLED_SEQ_STRING); // First SPI transaction has a glitch, so do it again.
 
   initWS2812B(&gLED_FUNC_STRING, &hspi1, GPIO_SPI_CS_MCU_LED_FUNC, 21);
   clearPixels(&gLED_FUNC_STRING);
   showPixels(&gLED_FUNC_STRING);
+  showPixels(&gLED_FUNC_STRING); // First SPI transaction has a glitch, so do it again.
 
   initEncoder(&gEncoders[0], GPIO_ENC_A_1, GPIO_ENC_B_1);
   initEncoder(&gEncoders[1], GPIO_ENC_A_2, GPIO_ENC_B_2);
