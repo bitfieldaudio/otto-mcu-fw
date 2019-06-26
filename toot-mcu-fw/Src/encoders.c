@@ -14,3 +14,15 @@ void initEncoder(encoder_t* enc, pindef_t pin_a, pindef_t pin_b)
 	enc->pinB = pin_b;
 	enc->value = 0;
 }
+
+void updateEncoder(encoder_t* encoder)
+{
+	if(HAL_GPIO_ReadPin(encoder->pinB.port, encoder->pinB.pin))
+	{
+		encoder->value++;
+	}
+	else
+	{
+		encoder->value--;
+	}
+}

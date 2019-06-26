@@ -21,7 +21,10 @@ typedef struct encoder_t
  	uint8_t value;
 }encoder_t;
 
+encoder_t gEncoders[NUM_ENCODERS];
+
 void initEncoder(encoder_t* enc, pindef_t pin_a, pindef_t pin_b);
+void updateEncoder(encoder_t* encoder);
 
 #ifdef __cplusplus
 }

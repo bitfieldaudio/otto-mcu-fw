@@ -206,7 +206,7 @@ void SysTick_Handler(void)
 void EXTI1_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI1_IRQn 0 */
-
+  updateEncoder(&gEncoders[3]);
   /* USER CODE END EXTI1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
@@ -220,7 +220,7 @@ void EXTI1_IRQHandler(void)
 void EXTI3_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI3_IRQn 0 */
-
+  updateEncoder(&gEncoders[2]);
   /* USER CODE END EXTI3_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
   /* USER CODE BEGIN EXTI3_IRQn 1 */
@@ -276,7 +276,20 @@ void DMA1_Channel7_IRQHandler(void)
 void EXTI9_5_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI9_5_IRQn 0 */
-
+  if(__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_6) != RESET)
+  {
+	  updateEncoder(&gEncoders[0]);
+	  __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_6);
+	  __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_7);
+	  return;
+  }
+  if(__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_7) != RESET)
+  {
+	  updateEncoder(&gEncoders[1]);
+	  __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_6);
+	  __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_7);
+	  return;
+  }
   /* USER CODE END EXTI9_5_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);

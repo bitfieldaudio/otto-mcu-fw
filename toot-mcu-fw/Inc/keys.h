@@ -14,7 +14,7 @@
 #include "stm32f1xx_hal.h"
 #include "toot.h"
 
-uint8_t gKeymap[NUM_ROWS]; // 8 Rows
+uint8_t gKeymap[NUM_ROWS]; // 8 Rows, bits in each byte represent the column.
 
 void fillKeymap(void);
 

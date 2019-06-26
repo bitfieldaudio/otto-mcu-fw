@@ -32,7 +32,10 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "toot.h"
+#include "keys.h"
+#include "ws2812b.h"
+#include "encoders.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

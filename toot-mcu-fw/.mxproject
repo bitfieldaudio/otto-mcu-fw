@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=/home/adorbs/STM32CubeIDE/workspace_1.0.0/toot-mcu-fw/Inc
+HeaderPath=/home/adorbs/git/toot-mcu-fw/toot-mcu-fw/Inc
 HeaderFiles=stm32f1xx_it.h;stm32f1xx_hal_conf.h;main.h;gpio.h;i2c.h;dma.h;usb.h;spi.h;
-SourcePath=/home/adorbs/STM32CubeIDE/workspace_1.0.0/toot-mcu-fw/Src
+SourcePath=/home/adorbs/git/toot-mcu-fw/toot-mcu-fw/Src
 SourceFiles=stm32f1xx_it.c;stm32f1xx_hal_msp.c;main.c;gpio.c;i2c.c;dma.c;usb.c;spi.c;
 
 [PreviousLibFiles]

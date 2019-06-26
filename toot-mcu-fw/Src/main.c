@@ -28,10 +28,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "toot.h"
-#include "keys.h"
-#include "ws2812b.h"
-#include "encoders.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,7 +57,6 @@ volatile uint8_t gRxBuffer[32];
 volatile uint8_t gTxBuffer[32];
 volatile I2C_SLAVE_STATE gI2C1_SLAVE_STATE = WAITING_FOR_MASTER;
 ws2812b_t gLED_DRUM_STRING, gLED_SEQ_STRING, gLED_FUNC_STRING;
-encoder_t gEncoders[4];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -103,25 +99,6 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 	HAL_GPIO_WritePin(GPIO_SPI_CS_MCU_LED_FUNC.port, GPIO_SPI_CS_MCU_LED_FUNC.pin, 1);
 	HAL_GPIO_WritePin(GPIO_SPI_CS_MCU_LED_SEQ.port, GPIO_SPI_CS_MCU_LED_SEQ.pin, 1);
 }
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	uint8_t i;
-	for (i=0; i<NUM_ENCODERS; i++)
-	{
-		if (gEncoders[i].pinA.pin == GPIO_Pin)
-		{
-			if(HAL_GPIO_ReadPin(gEncoders[i].pinB.port, gEncoders[i].pinB.pin))
-			{
-				gEncoders[i].value--;
-			}
-			else
-			{
-				gEncoders[i].value++;
-			}
-			break;
-		}
-	}
-}
 /* USER CODE END 0 */
 
 /**
@@ -158,6 +135,7 @@ int main(void)
   MX_USB_PCD_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
+  HAL_Delay(100); // Delay 100 milliseconds for LEDs to power on
 
   initWS2812B(&gLED_DRUM_STRING, &hspi1, GPIO_SPI_CS_MCU_LED_DRUM, 10);
   clearPixels(&gLED_DRUM_STRING);
