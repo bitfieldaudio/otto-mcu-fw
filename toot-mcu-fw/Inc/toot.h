@@ -38,9 +38,10 @@ typedef struct pindef_t
 #define GPIO_ROW_7		(pindef_t){GPIOA,GPIO_PIN_8}
 #define GPIO_ROW_8		(pindef_t){GPIOC,GPIO_PIN_12}
 
+#define NUM_LED_STRINGS 3
+#define GPIO_SPI_CS_MCU_LED_FUNC	(pindef_t){GPIOA,GPIO_PIN_4}
 #define GPIO_SPI_CS_MCU_LED_DRUM	(pindef_t){GPIOC,GPIO_PIN_4}
 #define GPIO_SPI_CS_MCU_LED_SEQ		(pindef_t){GPIOC,GPIO_PIN_5}
-#define GPIO_SPI_CS_MCU_LED_FUNC	(pindef_t){GPIOA,GPIO_PIN_4}
 
 #define NUM_ENCODERS	4
 #define GPIO_ENC_A_1	(pindef_t){GPIOC, GPIO_PIN_6}
@@ -53,6 +54,8 @@ typedef struct pindef_t
 #define GPIO_ENC_B_4	(pindef_t){GPIOA, GPIO_PIN_0}
 
 #define GPIO_LED_PIN	(pindef_t){GPIOB, GPIO_PIN_11}
+
+#define TOOT_I2C_ADDRESS 0x77<<1
 
 #ifdef __cplusplus
 }

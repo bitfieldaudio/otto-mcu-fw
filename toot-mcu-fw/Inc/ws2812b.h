@@ -12,11 +12,8 @@
 #endif
 
 #include "stm32f1xx_hal.h"
-#include "toot.h"
 #include <stdlib.h>
-
-//256*3 byte array to encode SPI stream for WS2812B
-uint8_t encoderLookup[768];
+#include "toot.h"
 
 typedef struct ws2812b_t
 {
@@ -26,6 +23,9 @@ typedef struct ws2812b_t
 	uint16_t numBytes;
 	uint8_t* pixelDataArray;
 } ws2812b_t;
+
+static ws2812b_t gLED_FUNC_STRING, gLED_DRUM_STRING, gLED_SEQ_STRING;
+static ws2812b_t* gLED_STRINGS[] = {&gLED_FUNC_STRING, &gLED_DRUM_STRING, &gLED_SEQ_STRING};
 
 void initWS2812B(ws2812b_t* string, SPI_HandleTypeDef* spiHandle, pindef_t spiCS, uint16_t numPixels);
 void setPixelColor(ws2812b_t* string, uint16_t n, uint8_t r, uint8_t g, uint8_t b);

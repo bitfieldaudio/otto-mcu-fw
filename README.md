@@ -6,7 +6,7 @@ The folder toot-mcu-fw contains the STM32CubeIDE Eclipse project for the TOOT MC
 - Free
 - Supported by ST Micro
 - Mac, Windows, Linux support
-- All-in-one package install containing toolchain and IDEWindows, Linux, Mac support
+- All-in-one package install containing toolchain and IDE
 - Will allow seamless migration between STM32 processor families
 
 Initial development will be done with the help of STM32's HAL library of drivers. Later development will gradually remove the HAL library in favor of more efficient custom implementations. The STM32Cube Code Generator is quite nice for visualizing the configuration of hardware peripherals and identifying potential conflicts.
