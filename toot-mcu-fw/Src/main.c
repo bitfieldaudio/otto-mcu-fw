@@ -202,7 +202,7 @@ int main(void)
   MX_USB_PCD_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_Delay(50); // Delay some milliseconds for LEDs to power on
+  HAL_Delay(400); // Delay some milliseconds for LEDs to power on
 
   initWS2812B(&gLED_DRUM_STRING, &hspi1, GPIO_SPI_CS_MCU_LED_DRUM, 10);
   initWS2812B(&gLED_SEQ_STRING, &hspi1, GPIO_SPI_CS_MCU_LED_SEQ, 16);
