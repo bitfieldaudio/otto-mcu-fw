@@ -31,49 +31,55 @@ void initWS2812B(ws2812b_t* string, SPI_HandleTypeDef* spiHandle, pindef_t spiCS
 /* Sets a specific pixel to a specific r,g,b color */
 void setPixelColor(ws2812b_t* string, uint16_t n, uint8_t r, uint8_t g, uint8_t b)
 {
-   uint8_t *bptr = string->pixelDataArray + (n<<3) + n + 2;
-   uint8_t *tPtr = (uint8_t *)encoderLookup + r*2 + r;
+   if (n < (string->numPixels))
+   {
+	   uint8_t *bptr = string->pixelDataArray + (n<<3) + n + 2;
+	   uint8_t *tPtr = (uint8_t *)encoderLookup + r*2 + r;
 
-   *bptr++ = *tPtr++;
-   *bptr++ = *tPtr++;
-   *bptr++ = *tPtr++;
+	   *bptr++ = *tPtr++;
+	   *bptr++ = *tPtr++;
+	   *bptr++ = *tPtr++;
 
-   tPtr = (uint8_t *)encoderLookup + g*2 + g;
-   *bptr++ = *tPtr++;
-   *bptr++ = *tPtr++;
-   *bptr++ = *tPtr++;
+	   tPtr = (uint8_t *)encoderLookup + g*2 + g;
+	   *bptr++ = *tPtr++;
+	   *bptr++ = *tPtr++;
+	   *bptr++ = *tPtr++;
 
-   tPtr = (uint8_t *)encoderLookup + b*2 + b;
-   *bptr++ = *tPtr++;
-   *bptr++ = *tPtr++;
-   *bptr++ = *tPtr++;
+	   tPtr = (uint8_t *)encoderLookup + b*2 + b;
+	   *bptr++ = *tPtr++;
+	   *bptr++ = *tPtr++;
+	   *bptr++ = *tPtr++;
+   }
 }
 
 /* Sets a specific pixel to a specific hex RGB color */
 void setPixelColorHex(ws2812b_t* string, uint16_t n, uint32_t c)
 {
-	uint8_t r,g,b;
+    if (n < (string->numPixels))
+    {
+		uint8_t r,g,b;
 
-	r = (uint8_t)(c >> 16);
-	g = (uint8_t)(c >>  8);
-	b = (uint8_t)c;
+		r = (uint8_t)(c >> 16);
+		g = (uint8_t)(c >>  8);
+		b = (uint8_t)c;
 
-	uint8_t *bptr = string->pixelDataArray + (n<<3) + n + 2;
-	uint8_t *tPtr = (uint8_t *)encoderLookup + g*2 + g;
+		uint8_t *bptr = string->pixelDataArray + (n<<3) + n + 2;
+		uint8_t *tPtr = (uint8_t *)encoderLookup + g*2 + g;
 
-	*bptr++ = *tPtr++;
-	*bptr++ = *tPtr++;
-	*bptr++ = *tPtr++;
+		*bptr++ = *tPtr++;
+		*bptr++ = *tPtr++;
+		*bptr++ = *tPtr++;
 
-	tPtr = (uint8_t *)encoderLookup + r*2 + r;
-	*bptr++ = *tPtr++;
-	*bptr++ = *tPtr++;
-	*bptr++ = *tPtr++;
+		tPtr = (uint8_t *)encoderLookup + r*2 + r;
+		*bptr++ = *tPtr++;
+		*bptr++ = *tPtr++;
+		*bptr++ = *tPtr++;
 
-	tPtr = (uint8_t *)encoderLookup + b*2 + b;
-	*bptr++ = *tPtr++;
-	*bptr++ = *tPtr++;
-	*bptr++ = *tPtr++;
+		tPtr = (uint8_t *)encoderLookup + b*2 + b;
+		*bptr++ = *tPtr++;
+		*bptr++ = *tPtr++;
+		*bptr++ = *tPtr++;
+    }
 }
 
 /* Clear pixels */
