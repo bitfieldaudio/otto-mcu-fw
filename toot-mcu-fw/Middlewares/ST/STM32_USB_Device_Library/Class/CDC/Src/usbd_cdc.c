@@ -166,6 +166,15 @@ USBD_ClassTypeDef  USBD_CDC =
 
 
 /* USB CDC device Configuration Descriptor */
+/*
+ * We have to count the number of elements and define them in macro
+ * "USB_CDC_CONFIG_DESC_SIZ", because the size of the array is
+ * stored in the array itself, a few lines down.
+ *
+ * BE CAREFUL When changing/adding/deleting lines,
+ * to always count the number of elements, and change
+ * impacted macros accordingly
+ */
 __ALIGN_BEGIN uint8_t USBD_CDC_CfgDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN_END =
 {
   /*Configuration Descriptor*/
@@ -236,29 +245,90 @@ __ALIGN_BEGIN uint8_t USBD_CDC_CfgDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN_END =
   0x01,   /* bInterfaceNumber: Number of Interface */
   0x00,   /* bAlternateSetting: Alternate setting */
   0x02,   /* bNumEndpoints: Two endpoints used */
-  0x0A,   /* bInterfaceClass: CDC */
-  0x00,   /* bInterfaceSubClass: */
+  0x01,   /* bInterfaceClass: Audio */
+  0x03,   /* bInterfaceSubClass: MIDI*/
   0x00,   /* bInterfaceProtocol: */
   0x00,   /* iInterface: */
 
-  /*Endpoint OUT Descriptor*/
-  0x07,   /* bLength: Endpoint Descriptor size */
-  USB_DESC_TYPE_ENDPOINT,      /* bDescriptorType: Endpoint */
-  CDC_OUT_EP,                        /* bEndpointAddress */
-  0x02,                              /* bmAttributes: Bulk */
-  LOBYTE(CDC_DATA_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-  HIBYTE(CDC_DATA_FS_MAX_PACKET_SIZE),
-  0x00,                              /* bInterval: ignore for Bulk transfer */
 
-  /*Endpoint IN Descriptor*/
-  0x07,   /* bLength: Endpoint Descriptor size */
-  USB_DESC_TYPE_ENDPOINT,      /* bDescriptorType: Endpoint */
-  CDC_IN_EP,                         /* bEndpointAddress */
-  0x02,                              /* bmAttributes: Bulk */
-  LOBYTE(CDC_DATA_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-  HIBYTE(CDC_DATA_FS_MAX_PACKET_SIZE),
-  0x00                               /* bInterval: ignore for Bulk transfer */
-} ;
+  /* From here, this is class-specific descriptors
+   * We have to count the bytes they add up to, and
+   * sum them to macro "USB_MIDI_CLASS_SPECIFIC_DESCRIPTORS_SIZE"
+   * Here:
+   * 7+6+9+9+5+9+5 = 50
+   * */
+
+  // Class-specific MIDI_STREAMING Interface Descriptor
+  0x07,                                 /* bLength */
+  AUDIO_INTERFACE_DESCRIPTOR_TYPE,      /* bDescriptorType */
+  0x01,                                 // Zero-based index of this interface
+  0x00,                                 // revision of this class specification (LSB)
+  0x01,                                 // revision of this class specification (MSB)
+  LOBYTE(USB_MIDI_CLASS_SPECIFIC_DESCRIPTORS_SIZE),
+  HIBYTE(USB_MIDI_CLASS_SPECIFIC_DESCRIPTORS_SIZE),         // Totalsize of class specific descriptors
+  /* 07 bytes */
+
+  // MIDI IN Jack Descriptor (Embedded)
+  6,        // Descriptor length
+  AUDIO_INTERFACE_DESCRIPTOR_TYPE,     // Descriptor type (CS_INTERFACE)
+  0x02,       // MIDI_IN_JACK subtype
+  0x01,       // EMBEDDED
+  MIDI_IN_JACK_ID,       // ID of this jack
+  0x00,       // unused
+  /* 06 bytes */
+
+  // MIDI Adapter MIDI OUT Jack Descriptor (Embedded)
+  9,        // Descriptor length
+  AUDIO_INTERFACE_DESCRIPTOR_TYPE,     // Descriptor type (CS_INTERFACE)
+  0x02,       // MIDI_OUT_JACK subtype
+  0x01,       // EMBEDDED
+  MIDI_OUT_JACK_ID,       // ID of this jack
+  0x01,       // number of input pins of this jack
+  0x02,       // ID of the entity to which this pin is connected
+  0x01,       // Output Pin number of the entity to which this input pin is connected
+  0x00,       // unused
+  /* 09 bytes */
+
+  // Standard Bulk OUT Endpoint Descriptor
+  9,        // Descriptor length
+  USB_DESC_TYPE_ENDPOINT,      // Descriptor type
+  CDC_OUT_EP,       // Out Endpoint 2
+  0x02,       // Bulk, not shared
+  LOBYTE(CDC_DATA_HS_MAX_PACKET_SIZE), // num of bytes per packet (LSB)
+  HIBYTE(CDC_DATA_HS_MAX_PACKET_SIZE), // num of bytes per packet (MSB)
+  0x00,       // ignore for bulk
+  0x00,       // unused
+  0x00,       // unused
+  /* 09 bytes */
+
+  // Class-specific MIDI_STREAMING Bulk Out Endpoint Descriptor
+  5, // Descriptor length
+  AUDIO_ENDPOINT_DESCRIPTOR_TYPE,      	// Descriptor type (CS_ENDPOINT)
+  0x01,       							// MS_GENERAL
+  0x02, 								// number of MIDI OUT Jacks
+  MIDI_OUT_JACK_ID,
+  /* 05 bytes */
+
+  // Standard Bulk IN Endpoint Descriptor
+  9,        // Descriptor length
+  USB_DESC_TYPE_ENDPOINT,      // Descriptor type
+  CDC_IN_EP,  // In Endpoint 1
+  0x02,       // Bulk, not shared
+  LOBYTE(CDC_DATA_HS_MAX_PACKET_SIZE),  // num of bytes per packet (LSB)
+  HIBYTE(CDC_DATA_HS_MAX_PACKET_SIZE),  // num of bytes per packet (MSB)
+  0x00,       // ignore for bulk
+  0x00,       // unused
+  0x00,       // unused
+  /* 09 bytes */
+
+  // Class-specific MIDI_STREAMING Bulk In Endpoint Descriptor
+  5, // Descriptor length
+  AUDIO_ENDPOINT_DESCRIPTOR_TYPE,      	// Descriptor type (CS_ENDPOINT)
+  0x01,       							// MS_GENERAL
+  0x01, 	  							// number of embedded MIDI In Jacks
+  MIDI_IN_JACK_ID,       				// ID of embedded MIDI In Jack
+  /* 5 bytes */
+};
 
 /**
   * @}

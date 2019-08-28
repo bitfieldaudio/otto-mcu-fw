@@ -63,7 +63,7 @@
   * @{
   */
 
-#define USBD_VID     7007
+#define USBD_VID     0x7007
 #define USBD_LANGID_STRING     1033
 #define USBD_MANUFACTURER_STRING     "TOOT"
 #define USBD_PID_FS     1

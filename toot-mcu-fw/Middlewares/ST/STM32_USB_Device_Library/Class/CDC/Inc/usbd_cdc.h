@@ -21,6 +21,13 @@
 #ifndef __USB_CDC_H
 #define __USB_CDC_H
 
+#define AUDIO_INTERFACE_DESCRIPTOR_TYPE 0x24
+#define AUDIO_ENDPOINT_DESCRIPTOR_TYPE 0x25
+#define USB_MIDI_CLASS_SPECIFIC_DESCRIPTORS_SIZE 50
+
+#define MIDI_IN_JACK_ID 	0x01
+#define MIDI_OUT_JACK_ID 	0x02
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -58,7 +65,7 @@ extern "C" {
 #define CDC_DATA_FS_MAX_PACKET_SIZE                 64U  /* Endpoint IN & OUT Packet size */
 #define CDC_CMD_PACKET_SIZE                         8U  /* Control Endpoint Packet size */
 
-#define USB_CDC_CONFIG_DESC_SIZ                     67U
+#define USB_CDC_CONFIG_DESC_SIZ                     103U
 #define CDC_DATA_HS_IN_PACKET_SIZE                  CDC_DATA_HS_MAX_PACKET_SIZE
 #define CDC_DATA_HS_OUT_PACKET_SIZE                 CDC_DATA_HS_MAX_PACKET_SIZE
 
