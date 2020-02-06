@@ -1,12 +1,12 @@
 /**
   ******************************************************************************
-  * File Name          : USB.h
-  * Description        : This file provides code for the configuration
-  *                      of the USB instances.
+  * File Name          : dma.h
+  * Description        : This file contains all the function prototypes for
+  *                      the dma.c file
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -17,8 +17,9 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __usb_H
-#define __usb_H
+#ifndef __dma_H
+#define __dma_H
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -26,17 +27,17 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+/* DMA memory to memory transfer handles -------------------------------------*/
+
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
-
-extern PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
-void MX_USB_PCD_Init(void);
+void MX_DMA_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
@@ -45,11 +46,8 @@ void MX_USB_PCD_Init(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ usb_H */
 
-/**
-  * @}
-  */
+#endif /* __dma_H */
 
 /**
   * @}

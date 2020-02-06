@@ -28,7 +28,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "toot.h"
 #include "keys.h"
 #include "ws2812b.h"
 #include "encoders.h"
@@ -148,7 +147,7 @@ void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *hi2c)
 }
 void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t TransferDirection, uint16_t AddrMatchCode)
 {
-  if(AddrMatchCode == TOOT_I2C_ADDRESS)
+  if(AddrMatchCode == OTTO_I2C_ADDRESS)
   {
 	  if ((TransferDirection == I2C_DIRECTION_TRANSMIT) && (gI2C1_SLAVE_STATE == WAITING_FOR_MASTER))
 	  {

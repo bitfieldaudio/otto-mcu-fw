@@ -1,12 +1,12 @@
 /**
   ******************************************************************************
-  * File Name          : toot.h
+  * File Name          : otto.h
   * Description        : This file is the header file for board specific code.
   * Author             : Steven Hang (github.com/adorbs)
   ******************************************************************************
   */
-#ifndef __toot_H
-#define __toot_H
+#ifndef __otto_H
+#define __otto_H
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -55,9 +55,9 @@ typedef struct pindef_t
 
 #define GPIO_LED_PIN	(pindef_t){GPIOB, GPIO_PIN_11}
 
-#define TOOT_I2C_ADDRESS 0x77<<1
+#define OTTO_I2C_ADDRESS 0x77<<1
 
 #ifdef __cplusplus
 }
 #endif
-#endif /*__toot_H */
+#endif /*__otto_H */

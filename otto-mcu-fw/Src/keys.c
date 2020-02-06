@@ -7,6 +7,9 @@
   */
 
 #include "keys.h"
+#ifdef __cplusplus
+ extern "C" {
+#endif
 
 void fillKeymap()
 {
@@ -27,3 +30,6 @@ void fillKeymap()
 		HAL_GPIO_WritePin(keyCols[i].port, keyCols[i].pin, 0);
 	}
 }
+#ifdef __cplusplus
+}
+#endif

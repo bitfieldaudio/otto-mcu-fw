@@ -1,12 +1,12 @@
 /**
   ******************************************************************************
-  * File Name          : dma.h
-  * Description        : This file contains all the function prototypes for
-  *                      the dma.c file
+  * File Name          : gpio.h
+  * Description        : This file contains all the functions prototypes for 
+  *                      the gpio  
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -16,18 +16,16 @@
   *
   ******************************************************************************
   */
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __dma_H
-#define __dma_H
 
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef __gpio_H
+#define __gpio_H
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
-/* DMA memory to memory transfer handles -------------------------------------*/
 
 /* USER CODE BEGIN Includes */
 
@@ -37,7 +35,7 @@
 
 /* USER CODE END Private defines */
 
-void MX_DMA_Init(void);
+void MX_GPIO_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
@@ -46,8 +44,11 @@ void MX_DMA_Init(void);
 #ifdef __cplusplus
 }
 #endif
+#endif /*__ pinoutConfig_H */
 
-#endif /* __dma_H */
+/**
+  * @}
+  */
 
 /**
   * @}

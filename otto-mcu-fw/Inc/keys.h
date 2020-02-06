@@ -12,7 +12,7 @@
 #endif
 
 #include "stm32f1xx_hal.h"
-#include "toot.h"
+#include "otto.h"
 
 static const pindef_t keyCols[] = {GPIO_COL_1, GPIO_COL_2, GPIO_COL_3,
 			   GPIO_COL_4, GPIO_COL_5, GPIO_COL_6,

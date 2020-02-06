@@ -1,7 +1,7 @@
-# toot-mcu-fw
-This is the MCU firmware for TOOT synthesizer
+# OTTO MCU FW
+This is the MCU firmware for OTTO synthesizer
 
-The folder toot-mcu-fw contains the STM32CubeIDE Eclipse project for the TOOT MCU firmware. While there are many toolchains available for developing on STM32, STM32Cube was chosen for the following reasons:
+The folder otto-mcu-fw contains the STM32CubeIDE Eclipse project for the OTTO MCU firmware. While there are many toolchains available for developing on STM32, STM32Cube was chosen for the following reasons:
 
 - Free
 - Supported by ST Micro
