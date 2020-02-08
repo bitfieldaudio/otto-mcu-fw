@@ -11,6 +11,8 @@
  extern "C" {
 #endif
 
+volatile uint8_t gKeymap[NUM_ROWS] = {}; 
+
 void fillKeymap()
 {
 	uint8_t i, j;

@@ -8,6 +8,8 @@
 
 #include "encoders.h"
 
+encoder_t gEncoders[NUM_ENCODERS] = {};
+
 void initEncoder(encoder_t* enc, pindef_t pin_a, pindef_t pin_b)
 {
 	enc->pinA = pin_a;

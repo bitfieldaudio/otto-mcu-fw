@@ -22,7 +22,7 @@ static const pindef_t keyRows[] = {GPIO_ROW_1, GPIO_ROW_2, GPIO_ROW_3,
 				GPIO_ROW_4, GPIO_ROW_5, GPIO_ROW_6,
 				GPIO_ROW_7, GPIO_ROW_8};
 
-volatile uint8_t gKeymap[NUM_ROWS]; // 8 Rows, bits in each byte represent the column.
+extern volatile uint8_t gKeymap[NUM_ROWS]; // 8 Rows, bits in each byte represent the column.
 
 void fillKeymap(void);
 
