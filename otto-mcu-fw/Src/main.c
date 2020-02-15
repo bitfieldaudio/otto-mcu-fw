@@ -176,6 +176,11 @@ int main(void)
         default: break;
       }
     }
+
+    showPixels(&gLED_FUNC_STRING);
+    showPixels(&gLED_DRUM_STRING);
+    showPixels(&gLED_SEQ_STRING);
+
     //	  else if(HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_ERROR)
     //	  {
     //		  switch (HAL_I2C_GetError(&hi2c1))

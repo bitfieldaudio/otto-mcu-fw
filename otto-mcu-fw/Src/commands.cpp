@@ -52,13 +52,11 @@ void handleSlaveCommandArgs(SlaveState* state, ByteSpan args)
         // gRxBuffer[3] is the Green Byte
         // gRxBuffer[4] is the Blue Byte
         setPixelColor(gLED_STRINGS[args.data[0]], args.data[1], args.data[2], args.data[3], args.data[4]);
-        showPixels(gLED_STRINGS[args.data[0]]);
         generateInputsResponse(state->tx_buffer);
         state->state = READY_TO_RESPOND;
         break;
       case LEDS_CLEAR:
         clearPixels(gLED_STRINGS[args.data[0]]);
-        showPixels(gLED_STRINGS[args.data[0]]);
         generateInputsResponse(state->tx_buffer);
         state->state = READY_TO_RESPOND;
         break;

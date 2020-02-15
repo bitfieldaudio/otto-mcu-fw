@@ -57,9 +57,13 @@ static bool append_midi_sysex(uint8_t byte)
 #define SYSEX_CMD_BYTE 0x07
 
 /// Queue sysex message
-///
+/// 
+/// The data itself will be encoded in the lower 4 bits of each byte. The
+/// upper 4 bits will be zero. This is done partly to avoid escaping the end
+/// delimiter, and partly because midi is extremely weird about bytes.
+/// 
 /// @param bytes the message, excluding the wrapping `0xF0` and `0xF7`
-static void queue_midi_sysex(ByteSpan bytes)
+static void midi_usb_queue_sysex(ByteSpan bytes)
 {
   int8_t i = 0;
   const auto enqueue = [&](uint8_t b) {
@@ -73,7 +77,11 @@ static void queue_midi_sysex(ByteSpan bytes)
   enqueue(SYSEX_START_BYTE);
   enqueue(SYSEX_MANID);
   enqueue(SYSEX_CMD_BYTE);
-  for (uint8_t b : bytes) enqueue(b);
+  for (uint8_t b : bytes) {
+    // Only use lower 4 bits of data bytes
+    enqueue(b >> 4);
+    enqueue(b & 0x0F);
+  }
   enqueue(SYSEX_END_BYTE);
   if (i == 0) {
     // First byte of last packet is 0x5 + number of bytes in packet [1;3]
@@ -93,12 +101,15 @@ static void handle_midi_sysex(USBD_HandleTypeDef* hUsbDeviceHS)
     handleSlaveCommandArgs(&midi_slave_state, ByteSpan{midi_SYSEX_buffer + 1, args_len});
   }
   if (midi_slave_state.state == READY_TO_RESPOND) {
-    queue_midi_sysex(midi_slave_state.tx_buffer);
+    midi_usb_queue_sysex(midi_slave_state.tx_buffer);
     midi_slave_state.state = WAITING_FOR_MASTER;
     midi_slave_state.tx_buffer.size = 0;
   }
 }
 
+/// Handle a midi message received over usb
+/// 
+/// Currently just handles sysex command messages, and echoes everything else back over USB
 static void handle_midi_message(USBD_HandleTypeDef* hUsbDeviceHS, MIDI_Message message)
 {
   if (midi_SYSEX_index > -1) {

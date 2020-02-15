@@ -22,6 +22,7 @@ typedef struct ws2812b_t
 	uint16_t numPixels;
 	uint16_t numBytes;
 	uint8_t* pixelDataArray;
+	uint8_t needsUpdate;
 } ws2812b_t;
 
 extern ws2812b_t gLED_FUNC_STRING, gLED_DRUM_STRING, gLED_SEQ_STRING;
