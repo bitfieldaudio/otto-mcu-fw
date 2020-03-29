@@ -70,6 +70,7 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef* hi2c)
   if (slave_state.state == WAITING_FOR_MASTER) {
     uint8_t req_len = handleSlaveCommand(&slave_state, rx_buffer.data[0]);
     if (req_len != 0) {
+      rx_buffer.size = req_len;
       if (HAL_I2C_Slave_Seq_Receive_IT(&hi2c1, rx_buffer.data, req_len, I2C_LAST_FRAME) != HAL_OK) {
         /* Transfer error in reception process */
         HAL_GPIO_TogglePin(GPIO_LED_PIN.port, GPIO_LED_PIN.pin);
@@ -77,7 +78,7 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef* hi2c)
       }
     }
   } else if (slave_state.state == COMMAND) {
-    handleSlaveCommandArgs(&slave_state, (ByteSpan){rx_buffer.data, hi2c->XferSize});
+    handleSlaveCommandArgs(&slave_state, (ByteSpan){rx_buffer.data, rx_buffer.size});
   }
 }
 void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef* hi2c)
@@ -167,7 +168,7 @@ int main(void)
           }
           break;
         case READY_TO_RESPOND:
-          if (HAL_I2C_Slave_Transmit_IT(&hi2c1, rx_buffer.data, rx_buffer.size) != HAL_OK) {
+          if (HAL_I2C_Slave_Transmit_IT(&hi2c1, slave_state.tx_buffer.data, slave_state.tx_buffer.size) != HAL_OK) {
             /* Transfer error in transmission process */
             HAL_GPIO_TogglePin(GPIO_LED_PIN.port, GPIO_LED_PIN.pin);
             Error_Handler();

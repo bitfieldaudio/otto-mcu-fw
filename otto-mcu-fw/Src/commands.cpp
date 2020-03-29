@@ -46,11 +46,11 @@ void handleSlaveCommandArgs(SlaveState* state, ByteSpan args)
     switch (state->command) {
       case LED_SET:
         assert(args.size == 5);
-        // gRxBuffer[0] is the LED string number
-        // gRxBuffer[1] is the LED number in that string
-        // gRxBuffer[2] is the Red Byte
-        // gRxBuffer[3] is the Green Byte
-        // gRxBuffer[4] is the Blue Byte
+        // args.data[0] is the LED string number
+        // args.data[1] is the LED number in that string
+        // args.data[2] is the Red Byte
+        // args.data[3] is the Green Byte
+        // args.data[4] is the Blue Byte
         setPixelColor(gLED_STRINGS[args.data[0]], args.data[1], args.data[2], args.data[3], args.data[4]);
         generateInputsResponse(state->tx_buffer);
         state->state = READY_TO_RESPOND;
