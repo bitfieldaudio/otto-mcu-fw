@@ -22,7 +22,7 @@ TARGET = otto-mcu-fw
 # debug build?
 DEBUG = 1
 # optimization
-OPT = -Og
+OPT = -O0
 
 
 #######################################
@@ -236,6 +236,6 @@ clean:
 #######################################
 
 deploy-otto-ssh: all
-	-scp $(BUILD_DIR)/$(TARGET).elf root@$(IP):~/toot-mcu-fw/toot-mcu-fw.elf && ssh -t root@$(IP) 'toot-mcu-fw/load-toot-mcu-fw.sh'
+	-scp $(BUILD_DIR)/$(TARGET).elf root@$(IP):~/otto-mcu-fw/otto-mcu-fw.elf && ssh -t root@$(IP) 'cd otto-mcu-fw && ./load-otto-mcu-fw.sh'
 
 # *** EOF ***

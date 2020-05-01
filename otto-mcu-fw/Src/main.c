@@ -69,6 +69,10 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef* hi2c)
 {
   if (slave_state.state == WAITING_FOR_MASTER) {
     uint8_t req_len = handleSlaveCommand(&slave_state, rx_buffer.data[0]);
+    if (hi2c->XferSize > 1) {
+      handleSlaveCommandArgs(&slave_state, (ByteSpan){rx_buffer.data + 1, hi2c->XferSize - 1});
+      return;
+    }
     if (req_len != 0) {
       rx_buffer.size = req_len;
       if (HAL_I2C_Slave_Seq_Receive_IT(&hi2c1, rx_buffer.data, req_len, I2C_LAST_FRAME) != HAL_OK) {
@@ -90,10 +94,16 @@ void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef* hi2c)
 void HAL_I2C_AddrCallback(I2C_HandleTypeDef* hi2c, uint8_t TransferDirection, uint16_t AddrMatchCode)
 {
   if (AddrMatchCode == OTTO_I2C_ADDRESS) {
-    if ((TransferDirection == I2C_DIRECTION_TRANSMIT) && (slave_state.state == WAITING_FOR_MASTER)) {
-      if (HAL_I2C_Slave_Seq_Receive_IT(&hi2c1, rx_buffer.data, 1, I2C_FIRST_FRAME) != HAL_OK) {
+    if (TransferDirection == I2C_DIRECTION_TRANSMIT && slave_state.state == WAITING_FOR_MASTER) {
+      rx_buffer.size = 1;
+      if (HAL_I2C_Slave_Seq_Receive_IT(&hi2c1, rx_buffer.data, rx_buffer.size, I2C_FIRST_FRAME) != HAL_OK) {
         Error_Handler();
       }
+      //} else if (TransferDirection == I2C_DIRECTION_RECEIVE) {
+      //  if (HAL_I2C_Slave_Seq_Transmit_IT(&hi2c1, slave_state.tx_buffer.data, slave_state.tx_buffer.size,
+      //  I2C_FIRST_FRAME) != HAL_OK) {
+      //    Error_Handler();
+      //  }
     }
   }
 }
@@ -158,9 +168,18 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
+    if (HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_LISTEN && slave_state.state == READY_TO_RESPOND) {
+      if (HAL_I2C_DisableListen_IT(&hi2c1) != HAL_OK) {
+        /* Transfer error in reception process */
+        HAL_GPIO_TogglePin(GPIO_LED_PIN.port, GPIO_LED_PIN.pin);
+        Error_Handler();
+      }
+    }
     if (HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_READY) {
       switch (slave_state.state) {
+        case COMMAND:
         case WAITING_FOR_MASTER:
+          // case READY_TO_RESPOND:
           if (HAL_I2C_EnableListen_IT(&hi2c1) != HAL_OK) {
             /* Transfer error in reception process */
             HAL_GPIO_TogglePin(GPIO_LED_PIN.port, GPIO_LED_PIN.pin);
@@ -178,20 +197,17 @@ int main(void)
       }
     }
 
+    else if (HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_ERROR) {
+      switch (HAL_I2C_GetError(&hi2c1)) {
+        case HAL_I2C_ERROR_AF: __HAL_I2C_CLEAR_FLAG(&hi2c1, I2C_FLAG_AF); break;
+        default: break;
+      }
+    }
+
     showPixels(&gLED_FUNC_STRING);
     showPixels(&gLED_DRUM_STRING);
     showPixels(&gLED_SEQ_STRING);
 
-    //	  else if(HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_ERROR)
-    //	  {
-    //		  switch (HAL_I2C_GetError(&hi2c1))
-    //		  {
-    //		  case HAL_I2C_ERROR_AF:
-    //			  __HAL_I2C_CLEAR_FLAG(&hi2c1,I2C_FLAG_AF);
-    //			  break;
-    //		  default: break;
-    //		  }
-    //	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -267,7 +283,7 @@ void assert_failed(uint8_t* file, uint32_t line)
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number */
   abort();
-  //printf("Wrong parameters value: file %s on line %d\r\n", file, line);
+  // printf("Wrong parameters value: file %s on line %d\r\n", file, line);
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
