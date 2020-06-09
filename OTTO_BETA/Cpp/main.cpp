@@ -107,6 +107,8 @@ namespace otto::mcu::power {
   GpioPin power_switch = {PWR_BUTTON_GPIO_Port, PWR_BUTTON_Pin};
   GpioPin rpi_power = {PI_PWR_EN_GPIO_Port, PI_PWR_EN_Pin};
   GpioPin led_power = {LED_PWR_EN_GPIO_Port, LED_PWR_EN_Pin};
+  GpioPin reg_iout = {REG_5V_IOUT_GPIO_Port, REG_5V_IOUT_Pin};
+  GpioPin reg_pwm = {REG_5V_PWM_GPIO_Port, REG_5V_PWM_Pin};
 
   void state_changed()
   {
@@ -126,10 +128,17 @@ namespace otto::mcu::power {
   void init()
   {
     power_switch.init(GpioPin::Mode::input, GpioPin::Pull::up);
+    rpi_power.init(GpioPin::Mode::output_pp);
+    led_power.init(GpioPin::Mode::output_pp);
+    reg_iout.init(GpioPin::Mode::analog);
+    reg_pwm.init(GpioPin::Mode::output_pp);
+    reg_pwm.write(1);
     main_loop.schedule(poll, 0, 500);
     state_changed();
   }
 } // namespace otto::mcu::power
+
+GpioPin midi_out = {MIDI_OUT_GPIO_Port, MIDI_OUT_Pin};
 
 extern "C" {
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
@@ -153,6 +162,7 @@ void OTTO_main_loop()
 
   test_encoders();
   // ws2812b::led_cascade_colors(leds);
+  // ws2812b::led_test_zeros(leds);
 
   while (true) {
     main_loop.exec();

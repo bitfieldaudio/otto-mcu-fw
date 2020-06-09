@@ -2,6 +2,8 @@
 
 #include "otto.h"
 
+#include "boost_sml.hpp"
+
 namespace otto::mcu::i2c {
 
   constexpr auto command_addr = 0x77;
@@ -10,3 +12,9 @@ namespace otto::mcu::i2c {
   void init();
 
 } // namespace otto::mcu::i2c
+
+/// MIDI over I2C RPI/MCU communication protocol:
+/// 
+/// RPI as master
+/// 
+/// Message from master -> 

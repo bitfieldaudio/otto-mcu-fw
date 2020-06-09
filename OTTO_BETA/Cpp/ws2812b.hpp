@@ -56,7 +56,12 @@ namespace otto::mcu::ws2812b {
 
     RGBColor operator*(float f) const
     {
-      return {static_cast<uint8_t>(r * f), static_cast<uint8_t>(g * f), static_cast<uint8_t>(b * f)};
+      return {static_cast<std::uint8_t>(r * f), static_cast<std::uint8_t>(g * f), static_cast<std::uint8_t>(b * f)};
+    }
+
+    RGBColor operator/(std::uint8_t v) const
+    {
+      return {static_cast<std::uint8_t>(r / v), static_cast<std::uint8_t>(g / v), static_cast<std::uint8_t>(b / v)};
     }
 
     bool operator==(RGBColor const& rhs)
@@ -66,35 +71,28 @@ namespace otto::mcu::ws2812b {
   };
 
   struct Ws2812bRef {
-    Ws2812bRef(std::uint8_t* data_ptr, bool& needs_update) : data_ptr_(data_ptr), needs_update_(needs_update) {}
+    Ws2812bRef(RGBColor* data_ptr, bool& needs_update) : data_ptr_(data_ptr), needs_update_(needs_update) {}
 
     Ws2812bRef& operator=(RGBColor col)
     {
       if (col == *this) return *this;
-      auto buf_iter = data_ptr_;
-      buf_iter = util::copy(ws2812b_mapping[col.r], buf_iter);
-      buf_iter = util::copy(ws2812b_mapping[col.g], buf_iter);
-      buf_iter = util::copy(ws2812b_mapping[col.b], buf_iter);
+      *data_ptr_ = col;
       needs_update_ = true;
       return *this;
     }
 
     operator RGBColor()
     {
-      return {
-        .r = byte_from_mapping({data_ptr_[0 + 0], data_ptr_[0 + 1], data_ptr_[0 + 2], data_ptr_[0 + 3]}),
-        .g = byte_from_mapping({data_ptr_[4 + 0], data_ptr_[4 + 1], data_ptr_[4 + 2], data_ptr_[4 + 3]}),
-        .b = byte_from_mapping({data_ptr_[8 + 0], data_ptr_[8 + 1], data_ptr_[8 + 2], data_ptr_[8 + 3]}),
-      };
+      return *data_ptr_;
     }
 
   private:
-    std::uint8_t* const data_ptr_;
+    RGBColor* const data_ptr_;
     bool& needs_update_;
   };
 
   struct Ws2812bIter {
-    Ws2812bIter(std::uint8_t* ptr, bool* needs_update) : ptr_(ptr), needs_update_(needs_update) {}
+    Ws2812bIter(RGBColor* ptr, bool* needs_update) : ptr_(ptr), needs_update_(needs_update) {}
 
     Ws2812bRef operator*()
     {
@@ -103,7 +101,7 @@ namespace otto::mcu::ws2812b {
 
     Ws2812bIter& operator++()
     {
-      ptr_ += 12;
+      ptr_++;
       return *this;
     }
 
@@ -125,12 +123,15 @@ namespace otto::mcu::ws2812b {
     }
 
   private:
-    std::uint8_t* ptr_ = nullptr;
+    RGBColor* ptr_ = nullptr;
     bool* needs_update_ = nullptr;
   };
 
   template<int N>
   struct Ws2812bArray {
+    static constexpr int max_colors_on = 16;
+    static constexpr int div_colors_by = 2;
+
     using iterator = Ws2812bIter;
 
     Ws2812bArray(SPI_HandleTypeDef& hspi) : hspi_(hspi)
@@ -147,7 +148,7 @@ namespace otto::mcu::ws2812b {
 
     void clear()
     {
-      util::fill(spi_buf_, ws2812b_mapping[0][0]);
+      util::fill(colors_, RGBColor{0, 0, 0});
       needs_update_ = true;
     }
 
@@ -168,53 +169,72 @@ namespace otto::mcu::ws2812b {
 
     iterator begin()
     {
-      return {spi_buf_.begin(), &needs_update_};
+      return {colors_.begin(), &needs_update_};
     }
 
     iterator end()
     {
-      return {spi_buf_.end(), &needs_update_};
+      return {colors_.end(), &needs_update_};
     }
 
     Ws2812bRef operator[](int idx)
     {
-      return {spi_buf_.data() + idx * 12, needs_update_};
+      return {colors_.data() + idx, needs_update_};
     }
 
   private:
     void transmit()
     {
-      auto res = HAL_SPI_Transmit_DMA(&hspi_, spi_buf_.data(), spi_buf_.size() + zeros_.size());
+      fill_spi_buf();
       while (__HAL_SPI_GET_FLAG(&hspi_, SPI_FLAG_BSY))
         ;
+      auto res = HAL_SPI_Transmit_DMA(&hspi_, spi_buf_.data(), spi_buf_.size());
       if (res != HAL_OK) {
         printf("ERROR");
       }
     }
 
+    void fill_spi_buf()
+    {
+      int leds_sum = 0;
+      constexpr auto max_sum = max_colors_on * 256;
+      auto buf_iter = spi_buf_.begin();
+      for (auto color : colors_) {
+        color = color / div_colors_by;
+        leds_sum += color.r + color.g + color.b;
+        if (leds_sum >= max_sum) color = {0, 0, 0};
+        buf_iter = util::copy(ws2812b_mapping[color.r], buf_iter);
+        buf_iter = util::copy(ws2812b_mapping[color.g], buf_iter);
+        buf_iter = util::copy(ws2812b_mapping[color.b], buf_iter);
+      }
+    }
+
     SPI_HandleTypeDef& hspi_;
     bool needs_update_;
+    std::array<RGBColor, size()> colors_ = {0};
     std::array<std::uint8_t, size()* 3 * 4> spi_buf_ = {0};
     std::array<std::uint8_t, 2> zeros_ = {0};
   };
 
 
   constexpr std::array colors = {
-    RGBColor{0x80, 0x80, 0x80}, RGBColor{0x80, 0x80, 0x00}, RGBColor{0x80, 0x00, 0x00}, RGBColor{0x80, 0x00, 0x80},
-    RGBColor{0x00, 0x00, 0x80}, RGBColor{0x00, 0x80, 0x80}, RGBColor{0x00, 0x80, 0x00},
+    RGBColor{0xFF, 0xFF, 0xFF}, RGBColor{0xFF, 0xFF, 0x00}, RGBColor{0xFF, 0x00, 0x00}, RGBColor{0xFF, 0x00, 0xFF},
+    RGBColor{0x00, 0x00, 0xFF}, RGBColor{0x00, 0xFF, 0xFF}, RGBColor{0x00, 0xFF, 0x00},
   };
 
   template<int N>
   void led_cascade_colors(Ws2812bArray<N>& leds)
   {
-    main_loop.schedule_cond_repeat([&leds, c = 0U, l = 0] () mutable {
+    main_loop.schedule_cond_repeat([&leds, c = 0U, l = 0]() mutable {
       leds[l] = colors[c] * 0.5;
       l++;
       if (l == leds.size()) {
         c++;
         l = 0;
       }
-      return c == colors.size() ? 0 : 50;
+      // return c == colors.size() ? 0 : 50;
+      if (c == colors.size()) c = 0;
+      return 50;
     });
   }
 
@@ -239,6 +259,17 @@ namespace otto::mcu::ws2812b {
         HAL_Delay(10);
       }
     }
+  }
+
+  template<int N>
+  void led_test_zeros(Ws2812bArray<N>& leds)
+  {
+    main_loop.schedule(
+      [&] {
+        leds[0] = RGBColor{0, 0, 0};
+        leds.send_update();
+      },
+      0, 1000);
   }
 
 } // namespace otto::mcu::ws2812b
