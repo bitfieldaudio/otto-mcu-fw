@@ -107,9 +107,17 @@ LoopFillZerobss:
 */
     .section  .text.Default_Handler,"ax",%progbits
 Default_Handler:
+  /* Load the address of the interrupt control register into r3 */
+  ldr r3, NVIC_INT_CTRL_CONST
+  /* Read the ICR into r2 */
+  ldr r2, [r3, #0]
+  /* Keep only least significant byte */
+  uxtb r2, r2
 Infinite_Loop:
   b  Infinite_Loop
   .size  Default_Handler, .-Default_Handler
+.align 4
+NVIC_INT_CTRL_CONST: .word 0xe000ed04
 /******************************************************************************
 *
 * The minimal vector table for a Cortex M3. Note that the proper constructs
@@ -120,7 +128,6 @@ Infinite_Loop:
    .section  .isr_vector,"a",%progbits
   .type  g_pfnVectors, %object
   .size  g_pfnVectors, .-g_pfnVectors
-    
     
 g_pfnVectors:
   .word  _estack

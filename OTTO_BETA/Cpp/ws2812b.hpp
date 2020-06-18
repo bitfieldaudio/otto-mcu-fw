@@ -1,12 +1,15 @@
 #pragma once
 
 #include <array>
+#include "scheduler.hpp"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_spi.h"
 
-#include "otto.hpp"
-
 #include "algorithm.hpp"
+
+namespace otto::mcu::instances {
+  extern Scheduler main_loop;
+}
 
 namespace otto::mcu::ws2812b {
 
@@ -223,23 +226,18 @@ namespace otto::mcu::ws2812b {
   };
 
   template<int N>
-  void led_cascade_colors(Ws2812bArray<N>& leds)
+  Task led_cascade_colors(Ws2812bArray<N>& leds)
   {
-    main_loop.schedule_cond_repeat([&leds, c = 0U, l = 0]() mutable {
-      leds[l] = colors[c] * 0.5;
-      l++;
-      if (l == leds.size()) {
-        c++;
-        l = 0;
+    for (auto&& c : colors) {
+      for (auto&& l : leds) {
+        l = c;
+        co_await instances::main_loop.suspend_for(50);
       }
-      // return c == colors.size() ? 0 : 50;
-      if (c == colors.size()) c = 0;
-      return 50;
-    });
+    }
   }
 
   template<int N>
-  void led_pulse_colors(Ws2812bArray<N>& leds)
+  Task led_pulse_colors(Ws2812bArray<N>& leds)
   {
     for (auto color : colors) {
       for (float f = 0; f <= 1; f += 0.01) {
@@ -248,7 +246,7 @@ namespace otto::mcu::ws2812b {
           leds[i] = fcolor;
         }
         leds.maybe_update();
-        HAL_Delay(10);
+        co_await instances::main_loop.suspend_for(10);
       }
       for (float f = 1; f >= 0; f -= 0.01) {
         auto fcolor = color * f;
@@ -256,7 +254,7 @@ namespace otto::mcu::ws2812b {
           leds[i] = fcolor;
         }
         leds.maybe_update();
-        HAL_Delay(10);
+        co_await instances::main_loop.suspend_for(10);
       }
     }
   }
@@ -264,12 +262,11 @@ namespace otto::mcu::ws2812b {
   template<int N>
   void led_test_zeros(Ws2812bArray<N>& leds)
   {
-    main_loop.schedule(
-      [&] {
-        leds[0] = RGBColor{0, 0, 0};
-        leds.send_update();
-      },
-      0, 1000);
+    while (true) {
+      leds[0] = RGBColor{0, 0, 0};
+      leds.send_update();
+      co_await instances::main_loop.suspend_for(1000);
+    }
   }
 
 } // namespace otto::mcu::ws2812b

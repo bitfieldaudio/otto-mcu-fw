@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+void OTTO_preinit();
 void OTTO_main_loop();
 
 #ifdef __cplusplus

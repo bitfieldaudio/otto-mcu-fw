@@ -82,6 +82,4 @@ namespace otto::mcu {
     bool invert = false;
   };
 
-  static inline const GpioPin status_led = {STATUS_LED_GPIO_Port, STATUS_LED_Pin, true};
-
 }

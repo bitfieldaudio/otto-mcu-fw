@@ -29,6 +29,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -67,7 +68,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define USE_HAL_I2C_REGISTER_CALLBACKS 1
 #define ROW_5_Pin GPIO_PIN_0
 #define ROW_5_GPIO_Port GPIOC
 #define ROW_6_Pin GPIO_PIN_1
