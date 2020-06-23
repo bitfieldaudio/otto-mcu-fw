@@ -7,6 +7,12 @@
 
 #include <coroutine>
 
+// Makes clangd shut up about not having these in std::experimental
+namespace std::experimental {
+  using std::coroutine_handle;
+  using std::coroutine_traits;
+}
+
 namespace otto::mcu {
   /// Time-trigger scheduler supporting repeated tasks
   struct Scheduler {
@@ -141,7 +147,7 @@ namespace otto::mcu {
       }
       auto initial_suspend()
       {
-        return std::suspend_always();
+        return std::suspend_never();
       }
       auto final_suspend()
       {
@@ -151,42 +157,26 @@ namespace otto::mcu {
       void return_void() {}
       void unhandled_exception() {}
 
+      auto await_transform(Task awaitable)
+      {
+        awaitable.promise_->next_ = coro_handle::from_promise(*this);
+        return std::suspend_always();
+      }
+
+      decltype(auto) await_transform(auto&& awaitable)
+      {
+        return std::forward<decltype(awaitable)>(awaitable);
+      }
+
     private:
-      friend Task;
-      Scheduler::Function next_ = nullptr;
+      coro_handle next_ = nullptr;
     };
 
     using coro_handle = promise_type::coro_handle;
 
-    Task(const Task&) = delete;
-    Task(Task&& o)
-    {
-      std::swap(promise_, o.promise_);
-      std::swap(to_resume, o.to_resume);
-    }
-
-    ~Task()
-    {
-      if (to_resume) to_resume.resume();
-    }
-
-    Task then(Task next) &&
-    {
-      promise_->next_ = [handle = coro_handle::from_promise(*next.promise_)] { handle.resume(); };
-      next.to_resume = nullptr;
-      return next;
-    }
-
-    void then(Scheduler::Function f) &&
-    {
-      promise_->next_ = std::move(f);
-    }
-
   private:
-    Task(promise_type& promise) : promise_(&promise), to_resume(coro_handle::from_promise(promise)){
-    }
+    Task(promise_type& promise) : promise_(&promise) {}
     promise_type* promise_;
-    coro_handle to_resume = nullptr;
   };
 
 } // namespace otto::mcu

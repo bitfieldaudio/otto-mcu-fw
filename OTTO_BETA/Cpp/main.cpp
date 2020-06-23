@@ -56,11 +56,6 @@ namespace otto::mcu::instances {
 using namespace otto::mcu;
 using namespace otto::mcu::instances;
 
-void test_leds()
-{
-  led_cascade_colors(leds);
-}
-
 /// Tests keys by updating the corresponding LED for each key.
 void test_keys()
 {
@@ -97,6 +92,13 @@ void test_encoders()
     leds.clear();
     leds[led_idx] = {0x80, 0x00, 0x00};
   };
+}
+
+Task test_leds()
+{
+  co_await led_pulse_colors(leds);
+  co_await led_cascade_colors(leds);
+  leds.clear();
 }
 
 namespace otto::mcu::power {
@@ -158,9 +160,7 @@ void OTTO_main_loop()
   yellow_encoder.init();
   red_encoder.init();
   power::init();
-  led_pulse_colors(leds) //
-    .then(ws2812b::led_cascade_colors(leds))
-    .then([] { leds.clear(); });
+  test_leds();
 
   while (true) {
     main_loop.exec();
