@@ -16,10 +16,8 @@ namespace std::experimental {
 namespace otto::mcu {
   /// Time-trigger scheduler supporting repeated tasks
   struct Scheduler {
-    /// Move-only function with max size of 48
-    using Function = fixed_size_function<void(), 64, construct_type::move>;
     /// Move-only function with max size of 32
-    using CondRepeatFunction = fixed_size_function<std::uint32_t(), 32, construct_type::move>;
+    using Function = fixed_size_function<void(), 32, construct_type::move>;
     /// Move only task type
     struct TaskElement {
       /// Function to execute
@@ -56,10 +54,6 @@ namespace otto::mcu {
       return false;
     }
 
-    /// Schedule function `f` to be run at least `delay` ms from now, repeating each `repeat` ms.
-    ///
-    /// Repeats do not accumulate, i.e, after each execution of `f`, it simply reschedules with a delay of
-    /// `repeat`.
     ///
     /// `repeat == 0` means no repetition
     void schedule(std::uint32_t delay, std::uint32_t repeat, Function f)
@@ -75,23 +69,6 @@ namespace otto::mcu {
     {
       schedule(0, 0, std::move(f));
     }
-
-    void schedule_cond_repeat(std::uint32_t delay, CondRepeatFunction f)
-    {
-      schedule(delay, [this, ff = std::move(f)]() mutable {
-        auto repeat = ff();
-        if (repeat) {
-          schedule_cond_repeat(repeat, std::move(ff));
-        }
-      });
-    }
-
-    void schedule_cond_repeat(CondRepeatFunction f)
-    {
-      schedule_cond_repeat(0, std::move(f));
-    }
-
-    Scheduler& get();
 
   private:
     struct [[nodiscard("You probably want to `co_await` this object")]] SuspendFor
