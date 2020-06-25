@@ -40,3 +40,24 @@ void operator delete[](void* p, std::nothrow_t) noexcept
 {
   operator delete(p); // Same as regular delete
 }
+
+void operator delete(void* p, std::size_t) noexcept
+{
+  operator delete(p); // Same as regular delete
+}
+
+void operator delete(void* p, std::size_t, std::nothrow_t) noexcept
+{
+  operator delete(p); // Same as regular delete
+}
+
+namespace std {
+  void __throw_bad_alloc()
+  {
+    std::abort();
+  }
+  void __throw_length_error(const char*)
+  {
+    std::abort();
+  }
+} // namespace std

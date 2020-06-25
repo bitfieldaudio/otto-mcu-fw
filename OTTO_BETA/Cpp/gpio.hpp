@@ -83,3 +83,6 @@ namespace otto::mcu {
   };
 
 }
+
+/// Construct a GpioPin struct from the cubemx *_GPIO_Port and *_Pin macros
+#define GPIO_PIN(name_prefix, ...) otto::mcu::GpioPin{name_prefix##_GPIO_Port, name_prefix##_Pin, __VA_OPT__(,) __VA_ARGS__}

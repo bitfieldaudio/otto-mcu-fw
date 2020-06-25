@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include "scheduler.hpp"
 #include "stm32f4xx_hal.h"
@@ -130,21 +131,22 @@ namespace otto::mcu::ws2812b {
     bool* needs_update_ = nullptr;
   };
 
-  template<int N>
   struct Ws2812bArray {
     static constexpr int max_colors_on = 16;
     static constexpr int div_colors_by = 2;
 
     using iterator = Ws2812bIter;
 
-    Ws2812bArray(SPI_HandleTypeDef& hspi) : hspi_(hspi)
+    Ws2812bArray(SPI_HandleTypeDef& hspi, int size) : hspi_(hspi)
     {
+      colors_.resize(size);
+      spi_buf_.resize(size * 12);
       clear();
     }
 
     void init()
     {
-      HAL_SPI_Transmit_DMA(&hspi_, zeros_.data(), zeros_.size());
+      HAL_SPI_Transmit_DMA(&hspi_, zeros.data(), zeros.size());
       while (__HAL_SPI_GET_FLAG(&hspi_, SPI_FLAG_BSY))
         ;
     }
@@ -165,19 +167,19 @@ namespace otto::mcu::ws2812b {
       needs_update_ = false;
     }
 
-    constexpr static int size()
+    int size()
     {
-      return N;
+      return std::ssize(colors_);
     }
 
     iterator begin()
     {
-      return {colors_.begin(), &needs_update_};
+      return {colors_.data(), &needs_update_};
     }
 
     iterator end()
     {
-      return {colors_.end(), &needs_update_};
+      return {colors_.data() + size(), &needs_update_};
     }
 
     Ws2812bRef operator[](int idx)
@@ -213,20 +215,18 @@ namespace otto::mcu::ws2812b {
     }
 
     SPI_HandleTypeDef& hspi_;
+    util::local_vector<RGBColor, 54> colors_;
+    util::local_vector<std::uint8_t, 12 * decltype(colors_)::capacity()> spi_buf_;
     bool needs_update_;
-    std::array<RGBColor, size()> colors_ = {0};
-    std::array<std::uint8_t, size()* 3 * 4> spi_buf_ = {0};
-    std::array<std::uint8_t, 2> zeros_ = {0};
+    std::array<std::uint8_t, 2> zeros = {0, 0};
   };
-
 
   constexpr std::array colors = {
     RGBColor{0xFF, 0xFF, 0xFF}, RGBColor{0xFF, 0xFF, 0x00}, RGBColor{0xFF, 0x00, 0x00}, RGBColor{0xFF, 0x00, 0xFF},
     RGBColor{0x00, 0x00, 0xFF}, RGBColor{0x00, 0xFF, 0xFF}, RGBColor{0x00, 0xFF, 0x00},
   };
 
-  template<int N>
-  Task led_cascade_colors(Ws2812bArray<N>& leds)
+  inline Task led_cascade_colors(Ws2812bArray& leds)
   {
     for (auto&& c : colors) {
       for (auto&& l : leds) {
@@ -236,8 +236,7 @@ namespace otto::mcu::ws2812b {
     }
   }
 
-  template<int N>
-  Task led_pulse_colors(Ws2812bArray<N>& leds)
+  inline Task led_pulse_colors(Ws2812bArray& leds)
   {
     for (auto color : colors) {
       for (float f = 0; f <= 1; f += 0.01) {
@@ -245,7 +244,6 @@ namespace otto::mcu::ws2812b {
         for (int i = 0; i < leds.size(); i++) {
           leds[i] = fcolor;
         }
-        leds.maybe_update();
         co_await instances::main_loop.suspend_for(10);
       }
       for (float f = 1; f >= 0; f -= 0.01) {
@@ -253,18 +251,15 @@ namespace otto::mcu::ws2812b {
         for (int i = 0; i < leds.size(); i++) {
           leds[i] = fcolor;
         }
-        leds.maybe_update();
         co_await instances::main_loop.suspend_for(10);
       }
     }
   }
 
-  template<int N>
-  void led_test_zeros(Ws2812bArray<N>& leds)
+  inline Task led_test_zeros(Ws2812bArray& leds)
   {
     while (true) {
       leds[0] = RGBColor{0, 0, 0};
-      leds.send_update();
       co_await instances::main_loop.suspend_for(1000);
     }
   }

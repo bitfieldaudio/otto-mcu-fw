@@ -5,13 +5,15 @@
 #include "fixed_size_function.hpp"
 #include "stm32f4xx_hal.h"
 
+#include <chrono>
+#include <compare>
 #include <coroutine>
 
 // Makes clangd shut up about not having these in std::experimental
 namespace std::experimental {
   using std::coroutine_handle;
   using std::coroutine_traits;
-}
+} // namespace std::experimental
 
 namespace otto::mcu {
   /// Time-trigger scheduler supporting repeated tasks
@@ -26,11 +28,11 @@ namespace otto::mcu {
       std::uint32_t time;
       /// Upon execution, the task will be requeued in X milliseconds after execution started.
       /// If 0, the task will not be repeated
-      std::uint32_t repeat = 0;
+      int repeat = -1;
 
-      bool operator>(const TaskElement& rhs) const
+      std::strong_ordering operator<=>(const TaskElement& rhs) const
       {
-        return time > rhs.time;
+        return time <=> rhs.time;
       }
     };
 
@@ -45,7 +47,7 @@ namespace otto::mcu {
         auto task = pop();
         assert_param(task.func);
         task.func();
-        if (task.repeat > 0) {
+        if (task.repeat >= 0) {
           task.time = time + task.repeat;
           push(std::move(task));
         }
@@ -54,20 +56,22 @@ namespace otto::mcu {
       return false;
     }
 
+    /// Schedule a function with optional initial delay and repeat times
     ///
-    /// `repeat == 0` means no repetition
-    void schedule(std::uint32_t delay, std::uint32_t repeat, Function f)
+    /// if `repeat >= 0`, then f will, upon completion, be scheduled
+    /// again with a delay of `repeat` ms
+    void schedule(std::uint32_t delay, int repeat, Function f)
     {
       push({std::move(f), HAL_GetTick() + delay, repeat});
     }
 
-    void schedule(std::uint32_t delay, Function f)
+    void schedule(int delay, Function f)
     {
-      schedule(delay, 0, std::move(f));
+      schedule(delay, -1, std::move(f));
     }
     void schedule(Function f)
     {
-      schedule(0, 0, std::move(f));
+      schedule(0, -1, std::move(f));
     }
 
   private:
@@ -115,6 +119,8 @@ namespace otto::mcu {
     util::local_vector<TaskElement, 1024> queue_;
   };
 
+  /// A very basic coroutine return type, that allows awaiting a `Task`
+  /// to resume when it's done.
   struct Task {
     struct promise_type {
       using coro_handle = std::coroutine_handle<promise_type>;

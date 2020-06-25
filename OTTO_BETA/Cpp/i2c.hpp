@@ -1,8 +1,6 @@
 #pragma once
 
-#include "otto.h"
-
-#include "boost_sml.hpp"
+#include <stm32f4xx.h>
 
 namespace otto::mcu::i2c {
 

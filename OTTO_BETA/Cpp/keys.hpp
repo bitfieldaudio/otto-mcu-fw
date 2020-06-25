@@ -15,6 +15,9 @@ namespace otto::mcu::keys {
       Cell(CellData data = {}) : data(data){};
       CellData data;
       bool is_down = false;
+      operator bool() const {
+        return is_down;
+      }
     };
     using Row = std::array<Cell, col_count>;
     using Table = std::array<Row, row_count>;

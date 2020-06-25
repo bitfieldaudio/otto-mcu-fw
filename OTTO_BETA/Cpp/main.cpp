@@ -9,7 +9,7 @@
 
 namespace otto::mcu::instances {
   Scheduler main_loop;
-  ws2812b::Ws2812bArray<54> leds = {hspi3};
+  ws2812b::Ws2812bArray leds = {hspi3, 54};
 
   KeyMatrix key_table = {
     .table = {{
@@ -23,31 +23,33 @@ namespace otto::mcu::instances {
       KeyMatrix::Row{{{{15}}, {{20}}, {{}}, {{26}}, {{46}}, {{39}}, {{}}, {{53}}}},
     }},
     .row_pins = {{
-      {ROW_1_GPIO_Port, ROW_1_Pin},
-      {ROW_2_GPIO_Port, ROW_2_Pin},
-      {ROW_3_GPIO_Port, ROW_3_Pin},
-      {ROW_4_GPIO_Port, ROW_4_Pin},
-      {ROW_5_GPIO_Port, ROW_5_Pin},
-      {ROW_6_GPIO_Port, ROW_6_Pin},
-      {ROW_7_GPIO_Port, ROW_7_Pin},
-      {ROW_8_GPIO_Port, ROW_8_Pin},
+      GPIO_PIN(ROW_1),
+      GPIO_PIN(ROW_2),
+      GPIO_PIN(ROW_3),
+      GPIO_PIN(ROW_4),
+      GPIO_PIN(ROW_5),
+      GPIO_PIN(ROW_6),
+      GPIO_PIN(ROW_7),
+      GPIO_PIN(ROW_8),
     }},
     .col_pins = {{
-      {COL_1_GPIO_Port, COL_1_Pin},
-      {COL_2_GPIO_Port, COL_2_Pin},
-      {COL_3_GPIO_Port, COL_3_Pin},
-      {COL_4_GPIO_Port, COL_4_Pin},
-      {COL_5_GPIO_Port, COL_5_Pin},
-      {COL_6_GPIO_Port, COL_6_Pin},
-      {COL_7_GPIO_Port, COL_7_Pin},
-      {COL_8_GPIO_Port, COL_8_Pin},
+      GPIO_PIN(COL_1),
+      GPIO_PIN(COL_2),
+      GPIO_PIN(COL_3),
+      GPIO_PIN(COL_4),
+      GPIO_PIN(COL_5),
+      GPIO_PIN(COL_6),
+      GPIO_PIN(COL_7),
+      GPIO_PIN(COL_8),
     }},
   };
 
-  Encoder blue_encoder = {{ENC_1_A_GPIO_Port, ENC_1_A_Pin}, {ENC_1_B_GPIO_Port, ENC_1_B_Pin}};
-  Encoder green_encoder = {{ENC_2_A_GPIO_Port, ENC_2_A_Pin}, {ENC_2_B_GPIO_Port, ENC_2_B_Pin}};
-  Encoder yellow_encoder = {{ENC_3_A_GPIO_Port, ENC_3_A_Pin}, {ENC_3_B_GPIO_Port, ENC_3_B_Pin}};
-  Encoder red_encoder = {{ENC_4_A_GPIO_Port, ENC_4_A_Pin}, {ENC_4_B_GPIO_Port, ENC_4_B_Pin}};
+  std::array<Encoder, 4> encoders = {{
+    {GPIO_PIN(ENC_1_A), GPIO_PIN(ENC_1_B)},
+    {GPIO_PIN(ENC_2_A), GPIO_PIN(ENC_2_B)},
+    {GPIO_PIN(ENC_3_A), GPIO_PIN(ENC_3_B)},
+    {GPIO_PIN(ENC_4_A), GPIO_PIN(ENC_4_B)},
+  }};
 
   const GpioPin status_led = {STATUS_LED_GPIO_Port, STATUS_LED_Pin, true};
 
@@ -67,7 +69,6 @@ void test_keys()
     }
   }
   leds.maybe_update();
-  HAL_Delay(5);
 }
 
 void test_encoders()
@@ -103,11 +104,11 @@ Task test_leds()
 
 namespace otto::mcu::power {
   bool state = false;
-  GpioPin power_switch = {PWR_BUTTON_GPIO_Port, PWR_BUTTON_Pin};
-  GpioPin rpi_power = {PI_PWR_EN_GPIO_Port, PI_PWR_EN_Pin};
-  GpioPin led_power = {LED_PWR_EN_GPIO_Port, LED_PWR_EN_Pin};
-  GpioPin reg_iout = {REG_5V_IOUT_GPIO_Port, REG_5V_IOUT_Pin};
-  GpioPin reg_pwm = {REG_5V_PWM_GPIO_Port, REG_5V_PWM_Pin};
+  GpioPin power_switch = GPIO_PIN(PWR_BUTTON);
+  GpioPin rpi_power = GPIO_PIN(PI_PWR_EN);
+  GpioPin led_power = GPIO_PIN(LED_PWR_EN);
+  GpioPin reg_iout = GPIO_PIN(REG_5V_IOUT);
+  GpioPin reg_pwm = GPIO_PIN(REG_5V_PWM);
 
   void state_changed()
   {
@@ -140,6 +141,10 @@ namespace otto::mcu::power {
 GpioPin midi_out = {MIDI_OUT_GPIO_Port, MIDI_OUT_Pin};
 
 extern "C" {
+
+/// Set up semihosting
+extern void initialise_monitor_handles(void);
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   blue_encoder.irq_checked(GPIO_Pin);
@@ -148,7 +153,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   red_encoder.irq_checked(GPIO_Pin);
 }
 
-void OTTO_preinit() {}
+void OTTO_preinit()
+{
+  /// If a debugger is connected, enable semihosting
+  if (CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) initialise_monitor_handles();
+}
 
 void OTTO_main_loop()
 {
@@ -160,7 +169,8 @@ void OTTO_main_loop()
   yellow_encoder.init();
   red_encoder.init();
   power::init();
-  test_leds();
+  main_loop.schedule(0, 5, test_keys);
+  i2c::init(&hi2c1);
 
   while (true) {
     main_loop.exec();
