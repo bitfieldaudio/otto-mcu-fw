@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <span>
 #include "scheduler.hpp"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_spi.h"
@@ -57,6 +58,10 @@ namespace otto::mcu::ws2812b {
 
   struct RGBColor {
     std::uint8_t r = 0, g = 0, b = 0;
+
+    static RGBColor from_bytes(std::span<std::uint8_t, 3> bytes) {
+      return {bytes[0], bytes[1], bytes[2]};
+    }
 
     RGBColor operator*(float f) const
     {
@@ -217,8 +222,8 @@ namespace otto::mcu::ws2812b {
     SPI_HandleTypeDef& hspi_;
     util::local_vector<RGBColor, 54> colors_;
     util::local_vector<std::uint8_t, 12 * decltype(colors_)::capacity()> spi_buf_;
-    bool needs_update_;
     std::array<std::uint8_t, 2> zeros = {0, 0};
+    bool needs_update_;
   };
 
   constexpr std::array colors = {

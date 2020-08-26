@@ -48,7 +48,7 @@ namespace otto::mcu {
         assert_param(task.func);
         task.func();
         if (task.repeat >= 0) {
-          task.time = time + task.repeat;
+          task.time = HAL_GetTick() + task.repeat;
           push(std::move(task));
         }
         return true;

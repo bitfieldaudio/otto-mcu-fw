@@ -2,6 +2,7 @@
 #include "i2c.hpp"
 #include "instances.hpp"
 #include "keys.hpp"
+#include "log.hpp"
 #include "scheduler.hpp"
 #include "ws2812b.hpp"
 
@@ -156,7 +157,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void OTTO_preinit()
 {
   /// If a debugger is connected, enable semihosting
-  if (CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) initialise_monitor_handles();
+  if (is_debug) initialise_monitor_handles();
 }
 
 void OTTO_main_loop()
@@ -169,8 +170,9 @@ void OTTO_main_loop()
   yellow_encoder.init();
   red_encoder.init();
   power::init();
-  main_loop.schedule(0, 5, test_keys);
+  // main_loop.schedule(0, 5, test_keys);
   i2c::init(&hi2c1);
+  // test_encoders();
 
   while (true) {
     main_loop.exec();

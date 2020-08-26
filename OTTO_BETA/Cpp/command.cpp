@@ -4,25 +4,35 @@
 
 #include "command.hpp"
 #include "instances.hpp"
+#include "log.hpp"
 
 namespace otto::mcu {
 
-  void CommandState::handle_args(std::span<uint8_t> bytes)
+  void CommandState::handle_args(std::span<uint8_t> args)
   {
-    state = State::idle;
+    switch (cur_cmd) {
+      case Command::led_set: {
+        instances::leds[args[0]] = ws2812b::RGBColor::from_bytes(std::span<uint8_t, 3>(args.subspan(1, 3)));
+      } break;
+      case Command::leds_clear: {
+        instances::leds.clear();
+      } break;
+      case Command::read_inputs: {
+        inputs_response();
+      } break;
+    }
   }
 
   uint8_t CommandState::handle_cmd(uint8_t cmd_byte)
   {
     if (state == State::idle) {
+      cmd_byte = 0;
+      state = State::waiting_for_args;
       cur_cmd = static_cast<Command>(cmd_byte);
-      inputs_response();
-      state = State::ready_to_respond;
-      return 0;
       switch (cur_cmd) {
-        case Command::led_set: state = State::waiting_for_args; return 5;
-        case Command::leds_clear: state = State::waiting_for_args; return 1;
-        case Command::read_inputs: inputs_response(); state = State::ready_to_respond;
+        case Command::led_set: return 4;
+        case Command::leds_clear: return 0;
+        case Command::read_inputs: return 0;
       }
     }
     return 0;

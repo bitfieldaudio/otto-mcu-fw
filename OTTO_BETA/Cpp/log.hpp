@@ -5,10 +5,17 @@
 
 namespace otto::mcu {
 
+#ifdef NDEBUG
+  constexpr bool is_debug = false;
+#else
+  constexpr bool is_debug = true;
+#endif
+
   [[gnu::format(printf, 1, 2)]] //
   inline void
   log(const char* fmt, ...)
   {
+    if constexpr (!is_debug) return;
     char buf[1024];
     va_list args;
     va_start(args, fmt);

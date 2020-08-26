@@ -18,8 +18,10 @@ namespace otto::mcu {
   struct CommandState {
     enum struct State {
       idle,
+      waiting_for_command,
       waiting_for_args,
-      ready_to_respond,
+      received_args,
+      transmitting_response,
     } state = State::idle;
 
     Command cur_cmd;
