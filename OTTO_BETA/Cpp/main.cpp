@@ -11,6 +11,7 @@
 namespace otto::mcu::instances {
   Scheduler main_loop;
   ws2812b::Ws2812bArray leds = {hspi3, 54};
+  i2c::I2CSlave i2c1;
 
   KeyMatrix key_table = {
     .table = {{
@@ -170,9 +171,14 @@ void OTTO_main_loop()
   yellow_encoder.init();
   red_encoder.init();
   power::init();
-  // main_loop.schedule(0, 5, test_keys);
-  i2c::init(&hi2c1);
-  // test_encoders();
+  i2c1.init();
+  // Test
+  i2c1.rx_callback = [] (std::span<const std::uint8_t> data) {
+    i2c::I2CSlave::PacketData packet;
+    std::ranges::fill(packet, 0);
+    std::ranges::copy(data, packet.begin());
+    i2c1.transmit(packet);
+  };
 
   while (true) {
     main_loop.exec();

@@ -7,119 +7,158 @@
 
 #include <stm32f4xx_hal_i2c.h>
 
+// Redefine to remove deprecated compound assignment to volatile
+#undef SET_BIT
+#undef CLEAR_BIT
+#define SET_BIT(REG, BIT) (REG) = (REG) | (BIT)
+#define CLEAR_BIT(REG, BIT) (REG) = (REG) & ~(BIT)
+
 namespace otto::mcu::i2c {
 
-  namespace {
-    CommandState slave_state;
-
-    util::local_vector<std::uint8_t, 32> rx_buffer;
-  } // namespace
-
-  void error_handler()
+  void I2CSlave::init()
   {
-    log("I2C Error handler");
-    while (true) {
-      asm("bkpt 255");
-      instances::status_led.toggle();
-      HAL_Delay(10);
-    }
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    // I2C1 GPIO Configuration
+    // PB8 = SCL, PB9 = SDA
+    GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    /* I2C1 clock enable */
+    __HAL_RCC_I2C1_CLK_ENABLE();
+
+    HAL_NVIC_SetPriority(I2C1_EV_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
+    HAL_NVIC_SetPriority(I2C1_ER_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
+
+    CLEAR_BIT(regs.CR1, I2C_CR1_PE);
+
+    SET_BIT(regs.CR1, I2C_CR1_SWRST);
+    CLEAR_BIT(regs.CR1, I2C_CR1_SWRST);
+
+    cauto pclk1 = HAL_RCC_GetPCLK1Freq();
+    cauto freqrange = pclk1 / 1'000'000;
+
+    MODIFY_REG(regs.CR2, I2C_CR2_FREQ, freqrange);
+
+    cauto rise_time = (freqrange) + 1U;
+
+    MODIFY_REG(regs.TRISE, I2C_TRISE_TRISE, rise_time);
+
+    cauto speed = I2C_SPEED_STANDARD(pclk1, 100000);
+    MODIFY_REG(regs.CCR, (I2C_CCR_FS | I2C_CCR_DUTY | I2C_CCR_CCR), speed);
+
+    MODIFY_REG(regs.CR1, (I2C_CR1_ENGC | I2C_CR1_NOSTRETCH), (I2C_GENERALCALL_DISABLED | I2C_NOSTRETCH_ENABLED));
+    MODIFY_REG(regs.OAR1, (I2C_OAR1_ADDMODE | I2C_OAR1_ADD8_9 | I2C_OAR1_ADD1_7 | I2C_OAR1_ADD0),
+               (I2C_ADDRESSINGMODE_7BIT | (0x77 << 1)));
+    MODIFY_REG(regs.OAR2, (I2C_OAR2_ENDUAL | I2C_OAR2_ADD2), (I2C_DUALADDRESS_DISABLED));
+
+    SET_BIT(regs.CR1, I2C_CR1_PE);
+
+    CLEAR_BIT(regs.CR1, I2C_CR1_POS);
+    SET_BIT(regs.CR1, I2C_CR1_ACK);
+
+    SET_BIT(regs.CR2, I2C_CR2_ITBUFEN | I2C_CR2_ITERREN | I2C_CR2_ITEVTEN);
+
+    instances::main_loop.schedule(0, 1, [this] { poll(); });
   }
 
-  void slave_rx_complete(I2C_HandleTypeDef* hi2c)
+  void I2CSlave::deinit()
   {
-    //log("Slave received %d bytes", rx_buffer.size());
-    if (slave_state.state == CommandState::State::waiting_for_command) {
-      auto arg_size = slave_state.handle_cmd(rx_buffer[0]);
-      rx_buffer.resize(arg_size);
-      slave_state.state = CommandState::State::waiting_for_args;
-      if (arg_size > 0) {
-        if (HAL_I2C_Slave_Seq_Receive_IT(hi2c, rx_buffer.data(), rx_buffer.size(), I2C_LAST_FRAME) != HAL_OK) {
-          error_handler();
-        }
-        return;
+    // Disable clock
+    CLEAR_BIT(RCC->APB1ENR, RCC_APB1ENR_I2C1EN);
+
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8 | GPIO_PIN_9);
+    HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
+    HAL_NVIC_DisableIRQ(I2C1_ER_IRQn);
+  }
+
+  void I2CSlave::irq_handle_ev()
+  {
+    cauto sr1 = regs.SR1;
+    cauto addr = READ_BIT(sr1, I2C_SR1_ADDR);
+    if (addr) {
+      // ADDR is cleared by reading sr2 after reading sr1
+      cauto sr2 = regs.SR2;
+      if (READ_BIT(sr2, I2C_SR2_TRA)) {
+        state = State::transmitting;
+      } else {
+        state = State::receiving;
       }
-    }
-    if (slave_state.state == CommandState::State::waiting_for_args) {
-      slave_state.state = CommandState::State::received_args;
-    }
-  }
-
-  void slave_tx_complete(I2C_HandleTypeDef* hi2c)
-  {
-    log("Slave transmitted %d bytes", slave_state.tx_buffer.size());
-    slave_state.state = CommandState::State::idle;
-    slave_state.tx_buffer.clear();
-  }
-
-  void error_callback(I2C_HandleTypeDef* hi2c)
-  {
-    log("I2C Error: %u", hi2c->ErrorCode);
-    slave_state.tx_buffer.clear();
-    rx_buffer.clear();
-    slave_state.state = CommandState::State::idle;
-  }
-
-  void address_callback(I2C_HandleTypeDef* hi2c, uint8_t TransferDirection, uint16_t AddrMatchCode)
-  {
-    if (AddrMatchCode == (command_addr << 1)) {
-      if (TransferDirection == I2C_DIRECTION_TRANSMIT && slave_state.state == CommandState::State::idle) {
-        // log("Address callback, transmit");
-        // rx_buffer.resize(1);
-        // log("AC, receiving %d byte", rx_buffer.size());
-        // if (HAL_I2C_Slave_Seq_Receive_IT(hi2c, rx_buffer.data(), rx_buffer.size(), I2C_FIRST_FRAME) != HAL_OK) {
-        //  error_handler();
-        //}
-      }
+    } else if (state == State::transmitting && READ_BIT(sr1, I2C_SR1_TXE)) {
+      // Datasheet fig 241: EV3
+      // Transmit the next byte
+      auto* packet = tx_buffer.peek_front();
+      std::uint8_t d = 0;
+      if (packet && tx_idx < packet->size()) d = (*packet)[tx_idx];
+      regs.DR = d;
+      tx_idx++;
+    } else if (state == State::receiving && READ_BIT(sr1, I2C_SR1_RXNE)) {
+      rx_buffer.push_back(regs.DR);
+    } else if (state == State::receiving && READ_BIT(sr1, I2C_SR1_STOPF)) {
+      // Clear STOPF by writing to CR1
+      regs.CR1 = regs.CR1;
+      // Disable ack until data has been read
+      CLEAR_BIT(regs.CR1, I2C_CR1_ACK);
+      state = State::received_data_ready;
     }
   }
 
-  void init(I2C_HandleTypeDef* hi2c)
+  void I2CSlave::irq_handle_er()
   {
-    log("Initializing i2c");
-    // HAL_I2C_RegisterAddrCallback(hi2c, address_callback);
-    HAL_I2C_RegisterCallback(hi2c, HAL_I2C_SLAVE_TX_COMPLETE_CB_ID, slave_tx_complete);
-    HAL_I2C_RegisterCallback(hi2c, HAL_I2C_SLAVE_RX_COMPLETE_CB_ID, slave_rx_complete);
-    HAL_I2C_RegisterCallback(hi2c, HAL_I2C_ERROR_CB_ID, error_callback);
-
-    instances::main_loop.schedule(0, 1, [hi2c]() {
-      if (HAL_I2C_GetState(hi2c) == HAL_I2C_STATE_READY) {
-        switch (slave_state.state) {
-          case CommandState::State::idle:
-            slave_state.state = CommandState::State::waiting_for_command;
-            rx_buffer.resize(1);
-            if (HAL_I2C_Slave_Receive_IT(hi2c, rx_buffer.data(), rx_buffer.size()) != HAL_OK) {
-              error_handler();
-            }
-            break;
-          case CommandState::State::waiting_for_command: //
-            break;
-          case CommandState::State::waiting_for_args: //
-            break;
-          case CommandState::State::received_args: //
-            slave_state.handle_args(rx_buffer);
-            rx_buffer.clear();
-            if (slave_state.tx_buffer.size() > 0) {
-              slave_state.state = CommandState::State::transmitting_response;
-              log("Transmitting %d bytes", slave_state.tx_buffer.size());
-              if (HAL_I2C_Slave_Transmit_IT(hi2c, slave_state.tx_buffer.data(), slave_state.tx_buffer.size()) !=
-                  HAL_OK) {
-                error_handler();
-              }
-            } else {
-              slave_state.state = CommandState::State::idle;
-            }
-            break;
-          case CommandState::State::transmitting_response: //
-            break;
-        }
-      } else if (HAL_I2C_GetState(hi2c) == HAL_I2C_STATE_ERROR) {
-        switch (HAL_I2C_GetError(hi2c)) {
-          case HAL_I2C_ERROR_AF: __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_AF); break;
-          default: break;
-        }
-        error_handler();
-      }
-    });
+    cauto sr1 = regs.SR1;
+    if (state == State::transmitting && READ_BIT(sr1, I2C_SR1_AF)) {
+      // Datasheet fig 241: EV3-2
+      // Was transmitting, got nack / stop condition.
+      // If the whole packet was transmitted, pop it off
+      if (tx_idx >= tx_buffer.peek_front()->size()) tx_buffer.pop_front();
+      tx_idx = 0;
+      state = State::waiting;
+      CLEAR_BIT(regs.SR1, I2C_SR1_AF);
+    } else {
+      otto::mcu::log("ER %s%s%s%s%s%s%s",                               //
+                     READ_BIT(sr1, I2C_SR1_BERR) ? "BERR " : "",        //
+                     READ_BIT(sr1, I2C_SR1_ARLO) ? "ARLO " : "",        //
+                     READ_BIT(sr1, I2C_SR1_AF) ? "AF " : "",            //
+                     READ_BIT(sr1, I2C_SR1_OVR) ? "OVR " : "",          //
+                     READ_BIT(sr1, I2C_SR1_PECERR) ? "PECERR " : "",    //
+                     READ_BIT(sr1, I2C_SR1_TIMEOUT) ? "TIMEOUT " : "",  //
+                     READ_BIT(sr1, I2C_SR1_SMBALERT) ? "SMBALERT " : "" //
+      );
+      SET_BIT(regs.CR1, I2C_CR1_ACK);
+      regs.SR1 = 0;
+    }
   }
 
+  void I2CSlave::poll()
+  {
+    if (state == State::received_data_ready) {
+      if (rx_callback) rx_callback(rx_buffer);
+      rx_buffer.clear();
+      state = State::waiting;
+      SET_BIT(regs.CR1, I2C_CR1_ACK);
+    }
+  }
+
+  void I2CSlave::transmit(PacketData d)
+  {
+    tx_buffer.push_back(d);
+  }
 } // namespace otto::mcu::i2c
+
+extern "C" {
+void I2C1_EV_IRQHandler()
+{
+  otto::mcu::instances::i2c1.irq_handle_ev();
+}
+void I2C1_ER_IRQHandler()
+{
+  otto::mcu::instances::i2c1.irq_handle_er();
+}
+}

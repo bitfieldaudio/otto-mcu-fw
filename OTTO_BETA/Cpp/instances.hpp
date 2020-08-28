@@ -4,6 +4,7 @@
 #include "keys.hpp"
 #include "scheduler.hpp"
 #include "ws2812b.hpp"
+#include "i2c.hpp"
 
 namespace otto::mcu::instances {
   struct KeyData {
@@ -14,6 +15,7 @@ namespace otto::mcu::instances {
   extern Scheduler main_loop;
   extern ws2812b::Ws2812bArray leds;
   extern KeyMatrix key_table;
+  extern i2c::I2CSlave i2c1;
 
   extern std::array<Encoder, 4> encoders;
 

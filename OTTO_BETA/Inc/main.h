@@ -29,7 +29,6 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
-#include "stm32f4xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -45,8 +44,6 @@ extern "C" {
 /* USER CODE BEGIN EC */
 
 extern ADC_HandleTypeDef hadc1;
-
-extern I2C_HandleTypeDef hi2c1;
 
 extern SPI_HandleTypeDef hspi3;
 
