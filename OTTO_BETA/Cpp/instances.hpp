@@ -1,20 +1,17 @@
 #pragma once
 
+#include "command.hpp"
 #include "encoder.hpp"
+#include "i2c.hpp"
+#include "input.hpp"
 #include "keys.hpp"
+#include "log.hpp"
 #include "scheduler.hpp"
 #include "ws2812b.hpp"
-#include "i2c.hpp"
 
 namespace otto::mcu::instances {
-  struct KeyData {
-    int led_idx = -1;
-  };
-  using KeyMatrix = keys::KeyMatrix<KeyData, 8, 8>;
-
   extern Scheduler main_loop;
   extern ws2812b::Ws2812bArray leds;
-  extern KeyMatrix key_table;
   extern i2c::I2CSlave i2c1;
 
   extern std::array<Encoder, 4> encoders;
@@ -25,4 +22,10 @@ namespace otto::mcu::instances {
   inline Encoder& red_encoder = encoders[3];
 
   extern const GpioPin status_led;
+
+  inline void transmit(const Packet& packet)
+  {
+    log("Transmitting packet");
+    i2c1.transmit(packet.to_array());
+  }
 } // namespace otto::mcu::instances

@@ -74,7 +74,7 @@ CPP_SOURCES = \
 Cpp/main.cpp \
 Cpp/new.cpp \
 Cpp/i2c.cpp \
-Cpp/command.cpp 
+Cpp/input.cpp
 
 # ASM sources
 ASM_SOURCES =  \

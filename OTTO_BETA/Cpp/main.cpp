@@ -13,16 +13,20 @@ namespace otto::mcu::instances {
   ws2812b::Ws2812bArray leds = {hspi3, 54};
   i2c::I2CSlave i2c1;
 
-  KeyMatrix key_table = {
+  InputManager inputs = InputManager::KeyMatrix{
     .table = {{
-      KeyMatrix::Row{{{{10}}, {{2}}, {{5}}, {{8}}, {{31}}, {{42}}, {{}}, {{49}}}},
-      KeyMatrix::Row{{{{0}}, {{3}}, {{6}}, {{9}}, {{44}}, {{43}}, {{}}, {{51}}}},
-      KeyMatrix::Row{{{{1}}, {{4}}, {{7}}, {{25}}, {{35}}, {{36}}, {{}}, {{50}}}},
-      KeyMatrix::Row{{{{11}}, {{16}}, {{21}}, {{27}}, {{33}}, {{40}}, {{}}, {{47}}}},
-      KeyMatrix::Row{{{{12}}, {{17}}, {{22}}, {{28}}, {{32}}, {{38}}, {{}}, {{}}}},
-      KeyMatrix::Row{{{{13}}, {{18}}, {{23}}, {{30}}, {{45}}, {{41}}, {{}}, {{48}}}},
-      KeyMatrix::Row{{{{14}}, {{19}}, {{24}}, {{29}}, {{34}}, {{37}}, {{}}, {{52}}}},
-      KeyMatrix::Row{{{{15}}, {{20}}, {{}}, {{26}}, {{46}}, {{39}}, {{}}, {{53}}}},
+      {Key::seq0, Key::channel2, Key::channel5, Key::channel8, Key::twist1, Key::sampler, Key::blue_enc_click,
+       Key::synth},
+      {Key::channel0, Key::channel3, Key::channel6, Key::channel9, Key::fx2, Key::sends, Key::yellow_enc_click,
+       Key::fx1},
+      {Key::channel1, Key::channel4, Key::channel7, Key::seq15, Key::slots, Key::unassigned_b, Key::none,
+       Key::envelope},
+      {Key::seq1, Key::seq6, Key::seq11, Key::unassigned_c, Key::plus, Key::routing, Key::red_enc_click, Key::voices},
+      {Key::seq2, Key::seq7, Key::seq12, Key::unassigned_d, Key::twist2, Key::looper, Key::none, Key::none},
+      {Key::seq3, Key::seq8, Key::seq13, Key::unassigned_f, Key::record, Key::sequencer, Key::none, Key::arp},
+      {Key::seq4, Key::seq9, Key::seq14, Key::unassigned_e, Key::minus, Key::unassigned_a, Key::green_enc_click,
+       Key::settings},
+      {Key::seq5, Key::seq10, Key::none, Key::shift, Key::plus, Key::external, Key::none},
     }},
     .row_pins = {{
       GPIO_PIN(ROW_1),
@@ -59,19 +63,6 @@ namespace otto::mcu::instances {
 
 using namespace otto::mcu;
 using namespace otto::mcu::instances;
-
-/// Tests keys by updating the corresponding LED for each key.
-void test_keys()
-{
-  key_table.scan();
-  for (const auto& row : key_table.table) {
-    for (auto& cell : row) {
-      if (cell.data.led_idx < 0) continue;
-      leds[cell.data.led_idx] = cell.is_down ? ws2812b::RGBColor{0x00, 0x80, 0x0} : ws2812b::RGBColor{0x00, 0x00, 0x00};
-    }
-  }
-  leds.maybe_update();
-}
 
 void test_encoders()
 {
@@ -163,17 +154,18 @@ void OTTO_preinit()
 
 void OTTO_main_loop()
 {
-  key_table.init();
+  power::init();
+  i2c1.init();
   leds.init();
   main_loop.schedule(0, 20, [] { leds.maybe_update(); });
   blue_encoder.init();
   green_encoder.init();
   yellow_encoder.init();
   red_encoder.init();
-  power::init();
-  i2c1.init();
+  inputs.init();
+  main_loop.schedule(0, 1, [] { inputs.poll(); });
   // Test
-  i2c1.rx_callback = [] (std::span<const std::uint8_t> data) {
+  i2c1.rx_callback = [](std::span<const std::uint8_t> data) {
     i2c::I2CSlave::PacketData packet;
     std::ranges::fill(packet, 0);
     std::ranges::copy(data, packet.begin());

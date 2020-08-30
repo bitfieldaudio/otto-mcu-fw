@@ -2,33 +2,29 @@
 #include <cstdint>
 #include <span>
 #include <vector>
-
-#include "instances.hpp"
-
-#define cauto const auto
+#include <algorithm>
 
 namespace otto::mcu {
 
   enum struct Command {
-    read_inputs = 0x00,
-    led_set = 0x01,
-    leds_clear = 0x02,
+    none = 0,
+    led_set = 1,
+    leds_clear = 2,
+    key_events = 3,
+    encoder_events = 4,
   };
 
-  struct CommandState {
-    enum struct State {
-      idle,
-      waiting_for_command,
-      waiting_for_args,
-      received_args,
-      transmitting_response,
-    } state = State::idle;
+  struct Packet {
+    Command cmd;
+    std::array<std::uint8_t, 16> data;
 
-    Command cur_cmd;
-    std::vector<uint8_t> tx_buffer;
-
-    uint8_t handle_cmd(uint8_t cmd_byte);
-    void handle_args(std::span<uint8_t> bytes);
-    void inputs_response();
+    std::array<std::uint8_t, 17> to_array() const
+    {
+      std::array<std::uint8_t, 17> res;
+      res[0] = static_cast<std::uint8_t>(cmd);
+      std::ranges::copy(data, res.begin() + 1);
+      return res;
+    }
   };
+
 } // namespace otto::mcu

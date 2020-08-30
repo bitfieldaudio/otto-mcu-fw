@@ -8,7 +8,6 @@
 namespace otto::mcu::i2c {
 
   constexpr auto command_addr = 0x77;
-  constexpr auto input_addr = 0x70;
 
   enum struct State {
     waiting,
@@ -64,7 +63,7 @@ namespace otto::mcu::i2c {
     void poll();
 
     I2C_TypeDef& regs = *I2C1;
-    Ringbuf<PacketData, 32> tx_buffer;
+    Ringbuf<PacketData, 16> tx_buffer;
     unsigned tx_idx = 0;
     util::local_vector<std::uint8_t, 128> rx_buffer;
   };

@@ -4,6 +4,7 @@
 #include "instances.hpp"
 #include "local_vector.hpp"
 #include "log.hpp"
+#include "utility.hpp"
 
 #include <stm32f4xx_hal_i2c.h>
 
