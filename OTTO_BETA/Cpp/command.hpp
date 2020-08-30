@@ -15,8 +15,8 @@ namespace otto::mcu {
   };
 
   struct Packet {
-    Command cmd;
-    std::array<std::uint8_t, 16> data;
+    Command cmd = Command::none;
+    std::array<std::uint8_t, 16> data = {0};
 
     std::array<std::uint8_t, 17> to_array() const
     {

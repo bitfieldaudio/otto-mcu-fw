@@ -16,11 +16,6 @@ namespace otto::mcu::instances {
 
   extern std::array<Encoder, 4> encoders;
 
-  inline Encoder& blue_encoder = encoders[0];
-  inline Encoder& green_encoder = encoders[1];
-  inline Encoder& yellow_encoder = encoders[2];
-  inline Encoder& red_encoder = encoders[3];
-
   extern const GpioPin status_led;
 
   inline void transmit(const Packet& packet)

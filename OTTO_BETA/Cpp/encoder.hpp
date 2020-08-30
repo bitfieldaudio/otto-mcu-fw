@@ -1,5 +1,8 @@
 #pragma once
 
+#include <atomic>
+
+#include "fixed_size_function.hpp"
 #include "gpio.hpp"
 
 namespace otto::mcu {
@@ -32,10 +35,14 @@ namespace otto::mcu {
           value += b_now ? 1 : -1;
         }
       }
-      if (handler) handler();
     }
-    std::int8_t value = 0;
-    function_ptr<void()> handler = nullptr;
+
+    std::int8_t grab_value()
+    {
+      return value.exchange(0);
+    }
+
+    std::atomic<std::int8_t> value = 0;
 
   private:
     bool a_prev = false;

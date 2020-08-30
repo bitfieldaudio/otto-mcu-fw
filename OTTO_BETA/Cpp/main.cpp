@@ -1,3 +1,5 @@
+#include <bit>
+
 #include "encoder.hpp"
 #include "i2c.hpp"
 #include "instances.hpp"
@@ -64,28 +66,15 @@ namespace otto::mcu::instances {
 using namespace otto::mcu;
 using namespace otto::mcu::instances;
 
-void test_encoders()
-{
-  blue_encoder.handler = [] {
-    int led_idx = std::clamp(blue_encoder.value + 0, 0, 15) + 10;
-    leds.clear();
-    leds[led_idx] = {0x00, 0x00, 0x80};
-  };
-  green_encoder.handler = [] {
-    int led_idx = std::clamp(green_encoder.value + 0, 0, 15) + 10;
-    leds.clear();
-    leds[led_idx] = {0x00, 0x80, 0x00};
-  };
-  yellow_encoder.handler = [] {
-    int led_idx = std::clamp(yellow_encoder.value + 0, 0, 15) + 10;
-    leds.clear();
-    leds[led_idx] = {0x80, 0x80, 0x00};
-  };
-  red_encoder.handler = [] {
-    int led_idx = std::clamp(red_encoder.value + 0, 0, 15) + 10;
-    leds.clear();
-    leds[led_idx] = {0x80, 0x00, 0x00};
-  };
+void poll_encoders(){
+  Packet p;
+  for (int i = 0; i < 4; i++) {
+    auto v = encoders[i].grab_value();
+    if (v == 0) continue;
+    p.cmd = Command::encoder_events;
+    p.data[i] = static_cast<std::uint8_t>(v);
+  }
+  if (p.cmd != Command::none) transmit(p);
 }
 
 Task test_leds()
@@ -140,10 +129,7 @@ extern void initialise_monitor_handles(void);
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  blue_encoder.irq_checked(GPIO_Pin);
-  green_encoder.irq_checked(GPIO_Pin);
-  yellow_encoder.irq_checked(GPIO_Pin);
-  red_encoder.irq_checked(GPIO_Pin);
+  for (auto& e : encoders) e.irq_checked(GPIO_Pin);
 }
 
 void OTTO_preinit()
@@ -158,12 +144,10 @@ void OTTO_main_loop()
   i2c1.init();
   leds.init();
   main_loop.schedule(0, 20, [] { leds.maybe_update(); });
-  blue_encoder.init();
-  green_encoder.init();
-  yellow_encoder.init();
-  red_encoder.init();
+  for (auto& enc : encoders) enc.init();
   inputs.init();
   main_loop.schedule(0, 1, [] { inputs.poll(); });
+  main_loop.schedule(0, 20, [] { poll_encoders(); });
   // Test
   i2c1.rx_callback = [](std::span<const std::uint8_t> data) {
     i2c::I2CSlave::PacketData packet;
