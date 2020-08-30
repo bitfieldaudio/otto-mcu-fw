@@ -1,4 +1,3 @@
-otto-mcu-fw/\.mxproject
-otto-mcu-fw/\.cproject
-otto-mcu-fw/.gdb_history
-otto-mcu-fw/.local.kak
+build
+.clangd
+.gdb_history
