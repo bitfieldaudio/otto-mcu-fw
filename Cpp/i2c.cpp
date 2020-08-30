@@ -66,8 +66,6 @@ namespace otto::mcu::i2c {
     SET_BIT(regs.CR1, I2C_CR1_ACK);
 
     SET_BIT(regs.CR2, I2C_CR2_ITBUFEN | I2C_CR2_ITERREN | I2C_CR2_ITEVTEN);
-
-    instances::main_loop.schedule(0, 1, [this] { poll(); });
   }
 
   void I2CSlave::deinit()
@@ -89,16 +87,19 @@ namespace otto::mcu::i2c {
       cauto sr2 = regs.SR2;
       if (READ_BIT(sr2, I2C_SR2_TRA)) {
         state = State::transmitting;
+        if (auto* p = tx_buffer.peek_front(); p != nullptr) {
+          current_tx = *tx_buffer.pop_front();
+        } else {
+          current_tx = {0};
+        }
+        tx_idx = 0;
       } else {
         state = State::receiving;
       }
     } else if (state == State::transmitting && READ_BIT(sr1, I2C_SR1_TXE)) {
       // Datasheet fig 241: EV3
       // Transmit the next byte
-      auto* packet = tx_buffer.peek_front();
-      std::uint8_t d = 0;
-      if (packet && tx_idx < packet->size()) d = (*packet)[tx_idx];
-      regs.DR = d;
+      regs.DR = tx_idx < current_tx.size() ? current_tx[tx_idx] : 0;
       tx_idx++;
     } else if (state == State::receiving && READ_BIT(sr1, I2C_SR1_RXNE)) {
       rx_buffer.push_back(regs.DR);
@@ -118,8 +119,6 @@ namespace otto::mcu::i2c {
       // Datasheet fig 241: EV3-2
       // Was transmitting, got nack / stop condition.
       // If the whole packet was transmitted, pop it off
-      if (tx_idx >= tx_buffer.peek_front()->size()) tx_buffer.pop_front();
-      tx_idx = 0;
       state = State::waiting;
       CLEAR_BIT(regs.SR1, I2C_SR1_AF);
     } else {
@@ -134,13 +133,19 @@ namespace otto::mcu::i2c {
       );
       SET_BIT(regs.CR1, I2C_CR1_ACK);
       regs.SR1 = 0;
+      tx_idx = 0;
+      state = State::waiting;
     }
   }
 
   void I2CSlave::poll()
   {
     if (state == State::received_data_ready) {
-      if (rx_callback) rx_callback(rx_buffer);
+      if (rx_buffer.size() >= 17) {
+        PacketData p;
+        std::ranges::copy(rx_buffer, p.begin());
+        if (rx_callback) rx_callback(p);
+      }
       rx_buffer.clear();
       state = State::waiting;
       SET_BIT(regs.CR1, I2C_CR1_ACK);

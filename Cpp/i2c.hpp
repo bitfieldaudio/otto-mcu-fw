@@ -57,13 +57,14 @@ namespace otto::mcu::i2c {
 
     void transmit(PacketData);
 
-    fixed_size_function<void(std::span<const std::uint8_t> data), 32, construct_type::move> rx_callback = nullptr;
+    fixed_size_function<void(PacketData data), 32, construct_type::move> rx_callback = nullptr;
 
-  private:
     void poll();
+  private:
 
     I2C_TypeDef& regs = *I2C1;
     Ringbuf<PacketData, 16> tx_buffer;
+    PacketData current_tx = {0};
     unsigned tx_idx = 0;
     util::local_vector<std::uint8_t, 128> rx_buffer;
   };

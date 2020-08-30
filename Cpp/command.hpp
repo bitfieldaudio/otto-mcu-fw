@@ -25,6 +25,12 @@ namespace otto::mcu {
       std::ranges::copy(data, res.begin() + 1);
       return res;
     }
+
+    static Packet from_array(std::array<std::uint8_t, 17> arr) {
+      Packet res = {static_cast<Command>(arr[0])};
+      std::copy(arr.begin() + 1, arr.end(), res.data.begin());
+      return res;
+    }
   };
 
 } // namespace otto::mcu
