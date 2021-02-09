@@ -15,18 +15,18 @@ namespace otto::mcu::instances {
 
   InputManager inputs = InputManager::KeyMatrix{
     .table = {{
-      {Key::seq0, Key::channel2, Key::channel5, Key::channel8, Key::twist1, Key::sampler, Key::blue_enc_click,
-       Key::synth},
-      {Key::channel0, Key::channel3, Key::channel6, Key::channel9, Key::fx2, Key::sends, Key::yellow_enc_click,
-       Key::fx1},
-      {Key::channel1, Key::channel4, Key::channel7, Key::seq15, Key::slots, Key::unassigned_b, Key::none,
-       Key::envelope},
-      {Key::seq1, Key::seq6, Key::seq11, Key::unassigned_c, Key::plus, Key::routing, Key::red_enc_click, Key::voices},
-      {Key::seq2, Key::seq7, Key::seq12, Key::unassigned_d, Key::twist2, Key::looper, Key::none, Key::none},
-      {Key::seq3, Key::seq8, Key::seq13, Key::unassigned_f, Key::record, Key::sequencer, Key::none, Key::arp},
-      {Key::seq4, Key::seq9, Key::seq14, Key::unassigned_e, Key::minus, Key::unassigned_a, Key::green_enc_click,
+      {Key::seq0, Key::channel2, Key::channel5, Key::channel8, Key::twist1, Key::sends, Key::blue_enc_click,
+       Key::sampler},
+      {Key::channel0, Key::channel3, Key::channel6, Key::channel9, Key::fx2, Key::fx1, Key::yellow_enc_click,
+       Key::looper},
+      {Key::channel1, Key::channel4, Key::channel7, Key::seq15, Key::mixer, Key::unassigned_c, Key::none,
+       Key::sequencer},
+      {Key::seq1, Key::seq6, Key::seq11, Key::unassigned_d, Key::play, Key::envelope, Key::red_enc_click, Key::synth},
+      {Key::seq2, Key::seq7, Key::seq12, Key::unassigned_e, Key::twist2, Key::unassigned_a, Key::none, Key::none},
+      {Key::seq3, Key::seq8, Key::seq13, Key::slots, Key::minus, Key::external, Key::none, Key::arp},
+      {Key::seq4, Key::seq9, Key::seq14, Key::unassigned_f, Key::record, Key::unassigned_b, Key::green_enc_click,
        Key::settings},
-      {Key::seq5, Key::seq10, Key::none, Key::shift, Key::play, Key::external, Key::none, Key::master},
+      {Key::seq5, Key::seq10, Key::none, Key::shift, Key::plus, Key::voices, Key::none, Key::master},
     }},
     .row_pins = {{
       GPIO_PIN(ROW_1),
@@ -78,38 +78,38 @@ namespace otto::mcu::instances {
       {Key::seq13, 23},
       {Key::seq14, 24},
       {Key::seq15, 25},
+      {Key::shift, 26},
+      {Key::unassigned_d, 27},
+      {Key::unassigned_e, 28},
+      {Key::unassigned_f, 29},
+      {Key::slots, 30},
+      {Key::twist1, 31},
+      {Key::twist2, 32},
+      {Key::play, 33},
+      {Key::record, 34},
+      {Key::mixer, 35},
+      {Key::unassigned_c, 36},
+      {Key::unassigned_b, 37},
+      {Key::unassigned_a, 38},
+      {Key::voices, 39},
+      {Key::envelope, 40},
+      {Key::external, 41},
+      {Key::sends, 42},
+      {Key::fx1, 43},
+      {Key::fx2, 44},
+      {Key::minus, 45},
+      {Key::plus, 46},
+      {Key::synth, 47},
+      {Key::arp, 48},
+      {Key::sampler, 49},
+      {Key::sequencer, 50},
+      {Key::looper, 51},
+      {Key::settings, 52},
+      {Key::master, 53},
       {Key::blue_enc_click, 255},
       {Key::green_enc_click, 255},
       {Key::yellow_enc_click, 255},
       {Key::red_enc_click, 255},
-      {Key::shift, 26},
-      {Key::sends, 43},
-      {Key::plus, 33},
-      {Key::routing, 40},
-      {Key::minus, 34},
-      {Key::fx1, 51},
-      {Key::fx2, 44},
-      {Key::master, 53},
-      {Key::play, 46},
-      {Key::record, 45},
-      {Key::arp, 48},
-      {Key::slots, 35},
-      {Key::twist1, 31},
-      {Key::twist2, 32},
-      {Key::looper, 38},
-      {Key::external, 39},
-      {Key::sampler, 42},
-      {Key::envelope, 50},
-      {Key::voices, 47},
-      {Key::settings, 52},
-      {Key::sequencer, 41},
-      {Key::synth, 49},
-      {Key::unassigned_a, 37},
-      {Key::unassigned_b, 36},
-      {Key::unassigned_c, 27},
-      {Key::unassigned_d, 28},
-      {Key::unassigned_e, 29},
-      {Key::unassigned_f, 30},
     }};
     std::array<std::uint8_t, 59> res;
     for (auto& i : res) {
@@ -153,29 +153,72 @@ Task test_leds()
   co_await led_pulse_colors(leds);
   co_await led_cascade_colors(leds);
   leds.clear();
+  co_await test_leds();
+}
+
+
+Task test_enc_colors()
+{
+  auto color = ws2812b::RGBColor{128, 128, 128};
+  while (true) {
+    co_await main_loop.suspend_for(1);
+    bool did_change = false;
+    for (int i = 0; i < 4; i++) {
+      auto v = encoders[i].grab_value();
+      if (v == 0) continue;
+      did_change = true;
+      if (i == 0) {
+        color.b = std::clamp(int(color.b) + v, 0, 255);
+      } else if (i == 1) {
+        color.g = std::clamp(int(color.g) + v, 0, 255);
+      } else if (i == 3) {
+        color.r = std::clamp(int(color.r) + v, 0, 255);
+      } else if (i == 2) {
+        color.r = std::clamp(int(color.r) + v, 0, 255);
+        color.g = std::clamp(int(color.g) + v, 0, 255);
+        color.b = std::clamp(int(color.b) + v, 0, 255);
+      }
+    }
+    if (did_change)
+      for (auto&& led : leds) led = color;
+  }
 }
 
 namespace otto::mcu::power {
-  bool state = false;
+  enum struct State { on, shutdown, off } state = State::off;
   GpioPin power_switch = GPIO_PIN(PWR_BUTTON);
   GpioPin rpi_power = GPIO_PIN(PI_PWR_EN);
   GpioPin led_power = GPIO_PIN(LED_PWR_EN);
-  GpioPin reg_iout = GPIO_PIN(REG_5V_IOUT);
-  GpioPin reg_pwm = GPIO_PIN(REG_5V_PWM);
 
-  void state_changed()
+  Task shutdown()
   {
-    rpi_power.write(state);
-    led_power.write(state);
-    status_led.write(state);
+    state = State::shutdown;
+    // Wait 5 seconds for rpi to shutdown
+    // TODO: Actual communication
+    i2c1.transmit(Packet{Command::shutdown}.to_array());
+    co_await instances::main_loop.suspend_for(5000);
+    rpi_power.write(false);
+    led_power.write(false);
+    status_led.write(false);
+    state = State::off;
   }
 
-  void poll()
+  Task poll(uint32_t interval_ms = 250)
   {
-    auto new_state = power_switch.read();
-    if (new_state == state) return;
-    state = new_state;
-    state_changed();
+    while (true) {
+      auto btn_state = power_switch.read();
+      if (state == State::off) {
+        if (btn_state) {
+          rpi_power.write(true);
+          led_power.write(true);
+          status_led.write(true);
+          state = State::on;
+        }
+      } else if (state == State::on) {
+        if (!btn_state) co_await shutdown();
+      }
+      co_await instances::main_loop.suspend_for(interval_ms);
+    }
   }
 
   void init()
@@ -183,11 +226,7 @@ namespace otto::mcu::power {
     power_switch.init(GpioPin::Mode::input, GpioPin::Pull::up);
     rpi_power.init(GpioPin::Mode::output_pp);
     led_power.init(GpioPin::Mode::output_pp);
-    reg_iout.init(GpioPin::Mode::analog);
-    reg_pwm.init(GpioPin::Mode::output_pp);
-    reg_pwm.write(1);
-    main_loop.schedule(0, 500, poll);
-    state_changed();
+    poll();
   }
 } // namespace otto::mcu::power
 
@@ -211,28 +250,38 @@ void OTTO_preinit()
 
 void OTTO_main_loop()
 {
-  power::init();
   i2c1.init();
   leds.init();
   for (auto& enc : encoders) enc.init();
   inputs.init();
+  power::init();
 
-  main_loop.schedule(0, 1, [] { leds.maybe_update(); });
   main_loop.schedule(0, 1, [] { inputs.poll(); });
   main_loop.schedule(0, 1, [] { poll_encoders(); });
-  main_loop.schedule(0, 1, [] { i2c1.poll(); });
+  main_loop.schedule(0, 0, [] { i2c1.poll(); });
 
   i2c1.rx_callback = [](i2c::I2CSlave::PacketData data) {
     auto p = Packet::from_array(data);
     switch (p.cmd) {
-      case Command::led_set: {
-        auto idx = led_map[p.data[0]];
-        if (idx > 54) break;
-        leds[idx] = ws2812b::RGBColor{p.data[1], p.data[2], p.data[3]};
+      case Command::leds_buffer: [[fallthrough]];
+      case Command::leds_commit: {
+        // There may be up to 4 LED colors in one message
+        for (int i = 0; i < 16; i += 4) {
+          auto idx = led_map[p.data[i + 0]];
+          if (idx >= leds.size()) {
+            leds[idx] = ws2812b::RGBColor{p.data[i + 1], p.data[i + 2], p.data[i + 3]};
+          }
+        }
+        if (p.cmd == Command::leds_commit) {
+          leds.send_update();
+        }
       } break;
       default: break;
     }
   };
+
+  // main_loop.schedule(0, 1, [] { leds.maybe_update(); });
+  // test_enc_colors();
 
   while (true) {
     main_loop.exec();

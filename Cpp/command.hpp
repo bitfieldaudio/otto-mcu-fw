@@ -1,17 +1,18 @@
 #pragma once
+#include <algorithm>
 #include <cstdint>
 #include <span>
 #include <vector>
-#include <algorithm>
 
 namespace otto::mcu {
 
-  enum struct Command {
+  enum struct Command : std::uint8_t {
     none = 0,
-    led_set = 1,
-    leds_clear = 2,
+    leds_buffer = 1,
+    leds_commit = 2,
     key_events = 3,
     encoder_events = 4,
+    shutdown = 5,
   };
 
   struct Packet {
@@ -26,7 +27,8 @@ namespace otto::mcu {
       return res;
     }
 
-    static Packet from_array(std::array<std::uint8_t, 17> arr) {
+    static Packet from_array(std::array<std::uint8_t, 17> arr)
+    {
       Packet res = {static_cast<Command>(arr[0])};
       std::copy(arr.begin() + 1, arr.end(), res.data.begin());
       return res;

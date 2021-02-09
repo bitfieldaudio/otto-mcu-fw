@@ -40,7 +40,7 @@ namespace otto::mcu {
     shift = 31,
     sends = 32,
     plus = 33,
-    routing = 34,
+    mixer = 34,
     minus = 35,
     fx1 = 36,
     fx2 = 37,

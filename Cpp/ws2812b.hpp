@@ -213,8 +213,8 @@ namespace otto::mcu::ws2812b {
         color = color / div_colors_by;
         leds_sum += color.r + color.g + color.b;
         if (leds_sum >= max_sum) color = {0, 0, 0};
-        buf_iter = util::copy(ws2812b_mapping[color.r], buf_iter);
         buf_iter = util::copy(ws2812b_mapping[color.g], buf_iter);
+        buf_iter = util::copy(ws2812b_mapping[color.r], buf_iter);
         buf_iter = util::copy(ws2812b_mapping[color.b], buf_iter);
       }
     }
