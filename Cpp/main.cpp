@@ -189,8 +189,6 @@ Task heartbeat(clock::duration interval = 1s)
   uint8_t i = 1;
   while (true) {
     i2c1.transmit(make_heartbeat().to_array());
-    leds[0] = ws2812b::colors[i % ws2812b::colors.size()];
-    leds.maybe_update();
     co_await instances::main_loop.suspend_for(interval);
     i++;
   }
@@ -265,7 +263,6 @@ extern void initialise_monitor_handles(void);
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  for (auto& e : encoders) e.irq_checked(GPIO_Pin);
 }
 
 void OTTO_preinit()
@@ -283,11 +280,14 @@ void OTTO_main_loop()
   inputs.init();
   power::init();
 
-  main_loop.schedule(0ms, 1ms, [] { inputs.poll(); });
-  // main_loop.schedule(0ms, 1ms, [] { poll_encoders(); });
+  main_loop.schedule(0ms, 500us, [] { inputs.poll(); });
+  main_loop.schedule(0ms, 10ms, [] { poll_encoders(); });
+  main_loop.schedule(0ms, 500us, [] {
+    for (auto& e : encoders) e.poll();
+  });
   main_loop.schedule(0ms, 0ms, [] { i2c1.poll(); });
 
-  heartbeat(100ms);
+  heartbeat(1s);
 
   i2c1.rx_callback = [](i2c::I2CSlave::PacketData data) {
     auto p = Packet::from_array(data);

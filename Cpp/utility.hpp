@@ -4,6 +4,7 @@
 #include <span>
 
 #define cauto const auto
+#define FWD(X) std::forward<decltype(X)>(X)
 
 namespace otto::mcu {
 

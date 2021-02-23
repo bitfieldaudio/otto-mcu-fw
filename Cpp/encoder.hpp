@@ -2,6 +2,7 @@
 
 #include <atomic>
 
+#include "algorithm.hpp"
 #include "fixed_size_function.hpp"
 #include "gpio.hpp"
 
@@ -11,29 +12,31 @@ namespace otto::mcu {
     GpioPin pin_a;
     GpioPin pin_b;
 
+    static constexpr std::array<std::uint8_t, 4> cw_states = {
+      0b0100, 0b0010, 0b1011, 0b1101
+    };
+    static constexpr std::array<std::uint8_t, 4> ccw_states = {
+      0b1110, 0b1000, 0b0001, 0b0111
+    };
+
     Encoder(GpioPin a, GpioPin b) : pin_a(a), pin_b(b) {}
 
     void init()
     {
-      pin_a.init(GpioPin::Mode::it_rising_falling, GpioPin::Pull::up);
+      pin_a.init(GpioPin::Mode::input, GpioPin::Pull::up);
       pin_b.init(GpioPin::Mode::input, GpioPin::Pull::up);
     }
 
-    void irq_checked(std::uint16_t pin)
+    void poll()
     {
-      if (pin != pin_a.pin) return;
-      irq();
-    }
-
-    void irq()
-    {
-      bool a_now = pin_a.read();
-      bool b_now = pin_b.read();
-      if (a_now != a_prev) {
-        a_prev = a_now;
-        if (a_now == false) {
-          value += b_now ? 1 : -1;
-        }
+      // LP Filter
+      state_ = (state_ << 1) | pin_a.read();
+      state_ = (state_ << 1) | pin_b.read();
+      state_ &= 0b1111;
+      if (util::contains(cw_states, state_)) {
+        value++;
+      } else if (util::contains(ccw_states, state_)) {
+        value--;
       }
     }
 
@@ -45,6 +48,6 @@ namespace otto::mcu {
     std::atomic<std::int8_t> value = 0;
 
   private:
-    bool a_prev = false;
+    std::uint16_t state_ = 0;
   };
 } // namespace otto::mcu

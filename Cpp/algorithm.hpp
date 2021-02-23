@@ -8,6 +8,8 @@
 #include <string_view>
 #include <type_traits>
 
+#include "utility.hpp"
+
 /// \file
 /// This file contains the \ref otto::util::algorithm namespace
 
@@ -68,7 +70,7 @@ namespace otto::util {
         return std::array<std::decay_t<decltype(std::invoke(gen, std::declval<int>()))>, sizeof...(ns)>{
           {std::invoke(gen, ns)...}};
       }
-    } // namespace detail
+    } // namespace algo_detail
 
     template<int n, class Func>
     constexpr auto generate_array(Func&& gen)
@@ -886,6 +888,12 @@ namespace otto::util {
       std::size_t n = 0;
       for (auto&& el : cont) n++;
       return n;
+    }
+
+    template<typename Range, typename T>
+    bool contains(Range&& r, T&& t)
+    {
+      return std::find(std::begin(r), std::end(r), FWD(t)) != std::end(r);
     }
 
     /// \}
