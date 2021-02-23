@@ -96,19 +96,33 @@ namespace otto::mcu::i2c {
       } else {
         state = State::receiving;
       }
-    } else if (state == State::transmitting && READ_BIT(sr1, I2C_SR1_TXE)) {
-      // Datasheet fig 241: EV3
-      // Transmit the next byte
-      regs.DR = tx_idx < current_tx.size() ? current_tx[tx_idx] : 0;
-      tx_idx++;
-    } else if (state == State::receiving && READ_BIT(sr1, I2C_SR1_RXNE)) {
-      rx_buffer.push_back(regs.DR);
-    } else if (state == State::receiving && READ_BIT(sr1, I2C_SR1_STOPF)) {
-      // Clear STOPF by writing to CR1
-      regs.CR1 = regs.CR1;
-      // Disable ack until data has been read
-      CLEAR_BIT(regs.CR1, I2C_CR1_ACK);
-      state = State::received_data_ready;
+    } else if (state == State::transmitting) {
+      if (READ_BIT(sr1, I2C_SR1_TXE)) {
+        // Datasheet fig 241: EV3
+        // Transmit the next byte
+        regs.DR = tx_idx < current_tx.size() ? current_tx[tx_idx] : 0;
+        tx_idx++;
+      }
+    } else if (state == State::receiving) {
+      if (READ_BIT(sr1, I2C_SR1_RXNE)) {
+        rx_buffer.push_back(regs.DR);
+      } else if (READ_BIT(sr1, I2C_SR1_STOPF)) {
+        // Clear STOPF by writing to CR1
+        regs.CR1 = regs.CR1;
+        // Disable ack until data has been read
+        CLEAR_BIT(regs.CR1, I2C_CR1_ACK);
+        state = State::received_data_ready;
+      }
+    } else {
+      // Clear STOPF
+      if (READ_BIT(sr1, I2C_SR1_STOPF)) {
+        [[maybe_unused]] cauto sr1 = regs.SR1;
+        regs.CR1 = regs.CR1;
+      }
+      // Clear data register, we're here because of an error
+      if (READ_BIT(sr1, I2C_SR1_RXNE)) {
+        [[maybe_unused]] cauto dr = regs.DR;
+      }
     }
   }
 
@@ -133,7 +147,21 @@ namespace otto::mcu::i2c {
       );
       SET_BIT(regs.CR1, I2C_CR1_ACK);
       regs.SR1 = 0;
+      // Clear STOPF and ADDR flags
+      cauto sr1 = regs.SR1;
+      if (READ_BIT(sr1, I2C_SR1_ADDR)) {
+        [[maybe_unused]] cauto sr1 = regs.SR1;
+        [[maybe_unused]] cauto sr2 = regs.SR2;
+      }
+      if (READ_BIT(sr1, I2C_SR1_STOPF)) {
+        [[maybe_unused]] cauto sr1 = regs.SR1;
+        regs.CR1 = regs.CR1;
+      }
+      if (READ_BIT(sr1, I2C_SR1_RXNE)) {
+        [[maybe_unused]] cauto dr = regs.DR;
+      }
       tx_idx = 0;
+      rx_buffer.clear();
       state = State::waiting;
     }
   }
@@ -141,8 +169,8 @@ namespace otto::mcu::i2c {
   void I2CSlave::poll()
   {
     if (state == State::received_data_ready) {
-      if (rx_buffer.size() >= 17) {
-        PacketData p;
+      PacketData p;
+      if (rx_buffer.size() >= p.size()) {
         std::ranges::copy(rx_buffer, p.begin());
         if (rx_callback) rx_callback(p);
       }

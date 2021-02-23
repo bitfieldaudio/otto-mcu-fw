@@ -1,5 +1,5 @@
 define reset
-  monitor reset halt
+  monitor reset
   continue
 end
 
@@ -10,5 +10,5 @@ end
 
 define r
   target remote $arg0:3333
-  monitor arm semihosting enable
+  #monitor semihosting enable
 end

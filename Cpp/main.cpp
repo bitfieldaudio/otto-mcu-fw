@@ -261,9 +261,7 @@ extern "C" {
 /// Set up semihosting
 extern void initialise_monitor_handles(void);
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-}
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {}
 
 void OTTO_preinit()
 {
@@ -285,19 +283,22 @@ void OTTO_main_loop()
   main_loop.schedule(0ms, 500us, [] {
     for (auto& e : encoders) e.poll();
   });
-  main_loop.schedule(0ms, 0ms, [] { i2c1.poll(); });
+  main_loop.schedule(0ms, 100us, [] { i2c1.poll(); });
 
   heartbeat(1s);
 
   i2c1.rx_callback = [](i2c::I2CSlave::PacketData data) {
     auto p = Packet::from_array(data);
+    log("→ [%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X]",
+        (std::uint8_t) p.cmd, p.data[0], p.data[1], p.data[2], p.data[3], p.data[4], p.data[5], p.data[6], p.data[7],
+        p.data[8], p.data[9], p.data[10], p.data[11], p.data[12], p.data[13], p.data[14], p.data[15]);
     switch (p.cmd) {
       case Command::leds_buffer: [[fallthrough]];
       case Command::leds_commit: {
         // There may be up to 4 LED colors in one message
         for (int i = 0; i < 16; i += 4) {
           auto idx = led_map[p.data[i + 0]];
-          if (idx >= leds.size()) {
+          if (idx < leds.size()) {
             leds[idx] = ws2812b::RGBColor{p.data[i + 1], p.data[i + 2], p.data[i + 3]};
           }
         }
@@ -312,6 +313,7 @@ void OTTO_main_loop()
   // main_loop.schedule(0, 1, [] { leds.maybe_update(); });
   // test_enc_colors();
 
+  log("Starting");
   while (true) {
     main_loop.exec();
   }
