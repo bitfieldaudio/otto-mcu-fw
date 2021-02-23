@@ -8,7 +8,7 @@ namespace otto::mcu {
 #ifdef NDEBUG
   constexpr bool is_debug = false;
 #else
-  constexpr bool is_debug = true;
+  constexpr bool is_debug = false;
 #endif
 
   [[gnu::format(printf, 1, 2)]] //

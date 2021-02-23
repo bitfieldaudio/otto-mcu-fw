@@ -161,7 +161,7 @@ Task test_enc_colors()
 {
   auto color = ws2812b::RGBColor{128, 128, 128};
   while (true) {
-    co_await main_loop.suspend_for(1);
+    co_await main_loop.suspend_for(1ms);
     bool did_change = false;
     for (int i = 0; i < 4; i++) {
       auto v = encoders[i].grab_value();
@@ -184,6 +184,32 @@ Task test_enc_colors()
   }
 }
 
+Task heartbeat(clock::duration interval = 1s)
+{
+  uint8_t i = 1;
+  while (true) {
+    i2c1.transmit(make_heartbeat().to_array());
+    leds[0] = ws2812b::colors[i % ws2812b::colors.size()];
+    leds.maybe_update();
+    co_await instances::main_loop.suspend_for(interval);
+    i++;
+  }
+}
+
+Task heartbeat_blocking(clock::duration interval = 1s)
+{
+  uint8_t i = 1;
+  while (true) {
+    i2c1.transmit(make_heartbeat().to_array());
+    leds[0] = ws2812b::colors[i % ws2812b::colors.size()];
+    leds.maybe_update();
+    auto time = clock::now() + interval;
+    while (clock::now() < time)
+      ;
+    i++;
+  }
+}
+
 namespace otto::mcu::power {
   enum struct State { on, shutdown, off } state = State::off;
   GpioPin power_switch = GPIO_PIN(PWR_BUTTON);
@@ -196,14 +222,14 @@ namespace otto::mcu::power {
     // Wait 5 seconds for rpi to shutdown
     // TODO: Actual communication
     i2c1.transmit(Packet{Command::shutdown}.to_array());
-    co_await instances::main_loop.suspend_for(5000);
+    co_await instances::main_loop.suspend_for(5s);
     rpi_power.write(false);
     led_power.write(false);
     status_led.write(false);
     state = State::off;
   }
 
-  Task poll(uint32_t interval_ms = 250)
+  Task poll(clock::duration interval = 250ms)
   {
     while (true) {
       auto btn_state = power_switch.read();
@@ -217,7 +243,7 @@ namespace otto::mcu::power {
       } else if (state == State::on) {
         if (!btn_state) co_await shutdown();
       }
-      co_await instances::main_loop.suspend_for(interval_ms);
+      co_await instances::main_loop.suspend_for(interval);
     }
   }
 
@@ -250,15 +276,18 @@ void OTTO_preinit()
 
 void OTTO_main_loop()
 {
+  clock::init();
   i2c1.init();
   leds.init();
   for (auto& enc : encoders) enc.init();
   inputs.init();
   power::init();
 
-  main_loop.schedule(0, 1, [] { inputs.poll(); });
-  main_loop.schedule(0, 1, [] { poll_encoders(); });
-  main_loop.schedule(0, 0, [] { i2c1.poll(); });
+  main_loop.schedule(0ms, 1ms, [] { inputs.poll(); });
+  // main_loop.schedule(0ms, 1ms, [] { poll_encoders(); });
+  main_loop.schedule(0ms, 0ms, [] { i2c1.poll(); });
+
+  heartbeat(100ms);
 
   i2c1.rx_callback = [](i2c::I2CSlave::PacketData data) {
     auto p = Packet::from_array(data);

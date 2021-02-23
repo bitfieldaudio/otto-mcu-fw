@@ -236,7 +236,7 @@ namespace otto::mcu::ws2812b {
     for (auto&& c : colors) {
       for (auto&& l : leds) {
         l = c;
-        co_await instances::main_loop.suspend_for(50);
+        co_await instances::main_loop.suspend_for(50ms);
       }
     }
   }
@@ -249,14 +249,14 @@ namespace otto::mcu::ws2812b {
         for (int i = 0; i < leds.size(); i++) {
           leds[i] = fcolor;
         }
-        co_await instances::main_loop.suspend_for(10);
+        co_await instances::main_loop.suspend_for(10ms);
       }
       for (float f = 1; f >= 0; f -= 0.01) {
         auto fcolor = color * f;
         for (int i = 0; i < leds.size(); i++) {
           leds[i] = fcolor;
         }
-        co_await instances::main_loop.suspend_for(10);
+        co_await instances::main_loop.suspend_for(10ms);
       }
     }
   }
@@ -265,7 +265,7 @@ namespace otto::mcu::ws2812b {
   {
     while (true) {
       leds[0] = RGBColor{0, 0, 0};
-      co_await instances::main_loop.suspend_for(1000);
+      co_await instances::main_loop.suspend_for(1s);
     }
   }
 

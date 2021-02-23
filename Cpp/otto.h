@@ -8,6 +8,7 @@ extern "C" {
 
 void OTTO_preinit();
 void OTTO_main_loop();
+void OTTO_systick();
 
 #ifdef __cplusplus
 }

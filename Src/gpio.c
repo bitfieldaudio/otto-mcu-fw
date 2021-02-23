@@ -1,12 +1,12 @@
 /**
   ******************************************************************************
-  * File Name          : gpio.c
-  * Description        : This file provides code for the configuration
-  *                      of all used GPIO pins.
+  * @file    gpio.c
+  * @brief   This file provides code for the configuration
+  *          of all used GPIO pins.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -19,6 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "gpio.h"
+
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
@@ -30,9 +31,9 @@
 
 /* USER CODE END 1 */
 
-/** Configure pins as 
-        * Analog 
-        * Input 
+/** Configure pins as
+        * Analog
+        * Input
         * Output
         * EVENT_OUT
         * EXTI
@@ -53,7 +54,7 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, COL_3_Pin|COL_4_Pin|COL_5_Pin|COL_6_Pin 
+  HAL_GPIO_WritePin(GPIOE, COL_3_Pin|COL_4_Pin|COL_5_Pin|COL_6_Pin
                           |COL_7_Pin|COL_1_Pin|COL_2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -71,28 +72,28 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PBPin PBPin PBPin PBPin 
+  /*Configure GPIO pins : PBPin PBPin PBPin PBPin
                            PBPin PBPin */
-  GPIO_InitStruct.Pin = BOOT1_Pin|ROW_1_Pin|ROW_2_Pin|ROW_3_Pin 
+  GPIO_InitStruct.Pin = BOOT1_Pin|ROW_1_Pin|ROW_2_Pin|ROW_3_Pin
                           |ROW_4_Pin|GPIO1_RASPI_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PEPin PEPin PEPin PEPin 
+  /*Configure GPIO pins : PEPin PEPin PEPin PEPin
                            PEPin PEPin PEPin */
-  GPIO_InitStruct.Pin = COL_3_Pin|COL_4_Pin|COL_5_Pin|COL_6_Pin 
+  GPIO_InitStruct.Pin = COL_3_Pin|COL_4_Pin|COL_5_Pin|COL_6_Pin
                           |COL_7_Pin|COL_1_Pin|COL_2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PDPin PDPin PDPin PDPin 
-                           PDPin PDPin PDPin PDPin 
+  /*Configure GPIO pins : PDPin PDPin PDPin PDPin
+                           PDPin PDPin PDPin PDPin
                            PDPin PDPin PDPin PDPin */
-  GPIO_InitStruct.Pin = ENC_3_A_Pin|ENC_3_B_Pin|ENC_4_A_Pin|ENC_4_B_Pin 
-                          |TRIGGER1_Pin|TRIGGER2_Pin|TRIGGER3_Pin|PWM1_GPIO13_RASPI_Pin 
+  GPIO_InitStruct.Pin = ENC_3_A_Pin|ENC_3_B_Pin|ENC_4_A_Pin|ENC_4_B_Pin
+                          |TRIGGER1_Pin|TRIGGER2_Pin|TRIGGER3_Pin|PWM1_GPIO13_RASPI_Pin
                           |ENC_1_B_Pin|ENC_2_A_Pin|MIDI_IN_Pin|ENC_2_B_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;

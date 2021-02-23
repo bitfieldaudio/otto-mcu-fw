@@ -4,6 +4,8 @@
 #include <span>
 #include <vector>
 
+#include "clock.hpp"
+
 namespace otto::mcu {
 
   enum struct Command : std::uint8_t {
@@ -13,6 +15,7 @@ namespace otto::mcu {
     key_events = 3,
     encoder_events = 4,
     shutdown = 5,
+    heartbeat = 6,
   };
 
   struct Packet {
@@ -34,5 +37,14 @@ namespace otto::mcu {
       return res;
     }
   };
+
+  inline Packet make_heartbeat(clock::time_point time = clock::now()) {
+    Packet res = {Command::heartbeat};
+    std::int64_t count = time.time_since_epoch().count();
+    for (int i = 0; i < 8; i++) {
+      res.data[i] = (count >> i * 8) & 0xFF;
+    }
+    return res;
+  }
 
 } // namespace otto::mcu
