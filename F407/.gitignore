@@ -1,0 +1,4 @@
+build
+.clangd
+.gdb_history
+compile_commands.json
