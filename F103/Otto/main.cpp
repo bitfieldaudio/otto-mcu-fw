@@ -12,7 +12,7 @@
 namespace otto::mcu::instances {
   Scheduler main_loop;
   ws2812b::Ws2812bArray leds = {hspi1, 54};
-  // i2c::I2CSlave i2c1;
+  i2c::I2CSlave i2c1;
 
   InputManager inputs = InputManager::KeyMatrix{
     .table = {{
@@ -189,7 +189,7 @@ Task heartbeat(clock::duration interval = 1s)
 {
   uint8_t i = 1;
   while (true) {
-    // i2c1.transmit(make_heartbeat().to_array());
+    i2c1.transmit(make_heartbeat().to_array());
     co_await instances::main_loop.suspend_for(interval);
     i++;
   }
@@ -199,7 +199,7 @@ Task heartbeat_blocking(clock::duration interval = 1s)
 {
   uint8_t i = 1;
   while (true) {
-    // i2c1.transmit(make_heartbeat().to_array());
+    transmit(make_heartbeat());
     leds[0] = ws2812b::colors[i % ws2812b::colors.size()];
     leds.maybe_update();
     auto time = clock::now() + interval;
@@ -228,8 +228,8 @@ namespace otto::mcu::power {
     state = State::shutdown;
     // Wait 5 seconds for rpi to shutdown
     // TODO: Actual communication
-    // i2c1.transmit(Packet{Command::shutdown}.to_array());
-    co_await instances::main_loop.suspend_for(1s);
+    transmit(Packet{Command::shutdown});
+    co_await instances::main_loop.suspend_for(5s);
     led_power.write(false);
     power_hold.write(false);
   }
@@ -276,45 +276,45 @@ void OTTO_main_loop()
 {
   clock::init();
   power::init();
-  // i2c1.init();
+  i2c1.init();
   leds.init();
-  // for (auto& enc : encoders) enc.init();
-  // inputs.init();
+  for (auto& enc : encoders) enc.init();
+  inputs.init();
 
-  // main_loop.schedule(0ms, 500us, [] { inputs.poll(); });
-  // main_loop.schedule(0ms, 10ms, [] { poll_encoders(); });
-  // main_loop.schedule(0ms, 500us, [] {
-  //   for (auto& e : encoders) e.poll();
-  // });
-  // main_loop.schedule(0ms, 100us, [] { i2c1.poll(); });
+  main_loop.schedule(0ms, 500us, [] { inputs.poll(); });
+  main_loop.schedule(0ms, 10ms, [] { poll_encoders(); });
+  main_loop.schedule(0ms, 500us, [] {
+    for (auto& e : encoders) e.poll();
+  });
+  main_loop.schedule(0ms, 100us, [] { i2c1.poll(); });
 
-  // heartbeat(1s);
+  heartbeat(1s);
 
-  // i2c1.rx_callback = [](i2c::I2CSlave::PacketData data) {
-  //   auto p = Packet::from_array(data);
-  //   log("→ [%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X]",
-  //       (std::uint8_t) p.cmd, p.data[0], p.data[1], p.data[2], p.data[3], p.data[4], p.data[5], p.data[6], p.data[7],
-  //       p.data[8], p.data[9], p.data[10], p.data[11], p.data[12], p.data[13], p.data[14], p.data[15]);
-  //   switch (p.cmd) {
-  //     case Command::leds_buffer: [[fallthrough]];
-  //     case Command::leds_commit: {
-  //       // There may be up to 4 LED colors in one message
-  //       for (int i = 0; i < 16; i += 4) {
-  //         auto idx = led_map[p.data[i + 0]];
-  //         if (idx < leds.size()) {
-  //           leds[idx] = ws2812b::RGBColor{p.data[i + 1], p.data[i + 2], p.data[i + 3]};
-  //         }
-  //       }
-  //       if (p.cmd == Command::leds_commit) {
-  //         leds.send_update();
-  //       }
-  //     } break;
-  //     default: break;
-  //   }
-  // };
+  i2c1.rx_callback = [](i2c::I2CSlave::PacketData data) {
+    auto p = Packet::from_array(data);
+    log("→ [%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X,%02X]",
+        (std::uint8_t) p.cmd, p.data[0], p.data[1], p.data[2], p.data[3], p.data[4], p.data[5], p.data[6], p.data[7],
+        p.data[8], p.data[9], p.data[10], p.data[11], p.data[12], p.data[13], p.data[14], p.data[15]);
+    switch (p.cmd) {
+      case Command::leds_buffer: [[fallthrough]];
+      case Command::leds_commit: {
+        // There may be up to 4 LED colors in one message
+        for (int i = 0; i < 16; i += 4) {
+          auto idx = led_map[p.data[i + 0]];
+          if (idx < leds.size()) {
+            leds[idx] = ws2812b::RGBColor{p.data[i + 1], p.data[i + 2], p.data[i + 3]};
+          }
+        }
+        if (p.cmd == Command::leds_commit) {
+          leds.send_update();
+        }
+      } break;
+      default: break;
+    }
+  };
 
   main_loop.schedule(0s, 1ms, [] { leds.maybe_update(); });
-  test_leds();
+  // test_leds();
   // test_enc_colors();
 
   // blink_status_led();

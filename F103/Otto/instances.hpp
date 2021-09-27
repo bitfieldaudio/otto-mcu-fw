@@ -21,6 +21,6 @@ namespace otto::mcu::instances {
   inline void transmit(const Packet& packet)
   {
     log("Transmitting packet");
-    // i2c1.transmit(packet.to_array());
+    i2c1.transmit(packet.to_array());
   }
 } // namespace otto::mcu::instances

@@ -17,7 +17,7 @@ namespace otto::mcu::ws2812b {
 
   using FourBytes = std::array<std::uint8_t, 4>;
 
-  constexpr std::array<std::uint8_t, 2> ws2812b_bits = {0b1000, 0b1110};
+  constexpr std::array<std::uint8_t, 2> ws2812b_bits = {0b0100, 0b0111};
 
   constexpr std::array ws2812b_mapping = [] {
     std::array<FourBytes, 256> res = {};
@@ -138,7 +138,7 @@ namespace otto::mcu::ws2812b {
 
   struct Ws2812bArray {
     static constexpr int max_colors_on = 16;
-    static constexpr int div_colors_by = 4;
+    static constexpr int div_colors_by = 1;
 
     using iterator = Ws2812bIter;
 

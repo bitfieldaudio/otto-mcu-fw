@@ -79,7 +79,7 @@ Otto/main.cpp \
 Otto/new.cpp \
 Otto/input.cpp \
 Otto/clock.cpp \
-# Otto/i2c.cpp \
+Otto/i2c.cpp \
 
 #######################################
 # binaries

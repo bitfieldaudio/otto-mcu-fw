@@ -6,7 +6,7 @@
 #include "log.hpp"
 #include "utility.hpp"
 
-#include <stm32f4xx_hal_i2c.h>
+#include <stm32f1xx_hal_i2c.h>
 
 // Redefine to remove deprecated compound assignment to volatile
 #undef SET_BIT
@@ -23,11 +23,10 @@ namespace otto::mcu::i2c {
     __HAL_RCC_GPIOB_CLK_ENABLE();
     // I2C1 GPIO Configuration
     // PB8 = SCL, PB9 = SDA
-    GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* I2C1 clock enable */
